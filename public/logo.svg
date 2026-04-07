@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Outer Tent / Mountain (Nordic & Events) -->
+  <path d="M 16 84 L 50 16 L 84 84" stroke="#0f172a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Inner Tent / Marketplace Stall -->
+  <path d="M 36 84 L 50 56 L 64 84" stroke="#0284c7" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,7 @@
+{
+  "name": "Creative Events - Proficient Backend Marketplace",
+  "description": "Secure, role-based marketplace for Sweden's event vendors. Featuring AI-driven optimization, secure authentication, and proficient data persistence.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
