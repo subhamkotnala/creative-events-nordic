@@ -152,28 +152,27 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-slate-50">
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="hover:opacity-80 transition-opacity flex items-center gap-3">
-              <motion.img 
-                src="/logo.svg" 
-                alt="Logo" 
-                className="h-[42px] w-[42px] object-contain drop-shadow-sm"
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                whileHover={{ scale: 1.05 }}
-              />
-              <span className="font-brand text-lg font-extrabold uppercase tracking-[0.15em] text-slate-900 pt-1">Creative Events</span>
-            </Link>
-            <div className="hidden md:flex items-center space-x-6 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 pt-1">
-              <Link to="/explore" className="hover:text-sky-600 transition-colors">Marketplace</Link>
-              {user?.role !== 'VENDOR' && (
-                <Link to="/join" className="hover:text-sky-600 transition-colors">Join Marketplace</Link>
-              )}
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[5rem] py-3 md:py-0 flex flex-wrap justify-between items-center gap-y-3">
+          <Link to="/" className="hover:opacity-80 transition-opacity flex items-center gap-3 order-1">
+            <motion.img 
+              src="/logo.svg" 
+              alt="Logo" 
+              className="h-[42px] w-[42px] object-contain drop-shadow-sm"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              whileHover={{ scale: 1.05 }}
+            />
+            <span className="font-brand text-base sm:text-lg font-extrabold uppercase tracking-[0.15em] text-slate-900 pt-1">Creative Events</span>
+          </Link>
+
+          <div className="flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 pt-1 order-3 md:order-2 w-full md:w-auto mt-1 md:mt-0 md:mr-auto md:ml-8">
+            <Link to="/explore" className="hover:text-sky-600 transition-colors">Marketplace</Link>
+            {user?.role !== 'VENDOR' && (
+              <Link to="/join" className="hover:text-sky-600 transition-colors">Join Marketplace</Link>
+            )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 order-2 md:order-3">
             <div className="hidden md:flex bg-slate-100 rounded-full p-1 mr-2">
               <button onClick={() => setLanguage('en')} className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all ${language === 'en' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}`}>EN</button>
               <button onClick={() => setLanguage('sv')} className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all ${language === 'sv' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}`}>SV</button>
