@@ -17,7 +17,7 @@ import Chatbot from './components/Chatbot';
 import { api } from './services/api';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Heart, Clock, Languages, Loader2, LogIn, Lock } from 'lucide-react';
+import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock } from 'lucide-react';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -55,6 +55,7 @@ const AppContent: React.FC = () => {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   
   const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -140,6 +141,15 @@ const AppContent: React.FC = () => {
     }`;
   };
 
+  const handleSignOut = async () => {
+    setIsUserMenuOpen(false);
+    setIsMenuOpen(false);
+    setIsSigningOut(true);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await logout();
+    setIsSigningOut(false);
+  };
+
   if (isDataLoading || isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -151,16 +161,42 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-slate-50">
+      <AnimatePresence>
+        {isSigningOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="flex flex-col items-center"
+            >
+              <LogOut className="w-12 h-12 text-slate-300 mb-6" />
+              <p className="text-white text-lg font-medium tracking-wide">Signing you out...</p>
+              <div className="w-48 h-1 bg-white/10 rounded-full mt-6 overflow-hidden">
+                <motion.div 
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                    className="h-full bg-slate-300"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[5rem] py-3 md:py-0 flex flex-wrap justify-between items-center gap-y-3">
           <Link to="/" className="hover:opacity-80 transition-opacity flex items-center gap-3 order-1">
-            <motion.img 
-              src="/logo.svg" 
+            <img 
+              src="/logo.png" 
               alt="Logo" 
-              className="h-[42px] w-[42px] object-contain drop-shadow-sm"
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              whileHover={{ scale: 1.05 }}
+              className="h-[64px] w-auto object-contain drop-shadow-sm"
             />
             <span className="font-brand text-base sm:text-lg font-extrabold uppercase tracking-[0.15em] text-slate-900 pt-1">Creative Events</span>
           </Link>
@@ -208,12 +244,9 @@ const AppContent: React.FC = () => {
                           onClick={() => setIsUserMenuOpen(false)}
                           className={getMenuLinkClass('/dashboard')}
                         >
-                          <ShoppingBag className="w-4 h-4" /> Merchant Center
+                          <ShoppingBag className="w-4 h-4" /> Vendor Dashboard
                         </Link>
                       )}
-                      <button className="w-full flex items-center gap-3 px-4 py-3 text-xs text-slate-600 hover:bg-slate-50 rounded-2xl">
-                        <Heart className="w-4 h-4" /> Favorites
-                      </button>
                       <Link 
                         to="/change-password" 
                         onClick={() => setIsUserMenuOpen(false)}
@@ -221,7 +254,7 @@ const AppContent: React.FC = () => {
                       >
                         <Lock className="w-4 h-4" /> Change Password
                       </Link>
-                      <button onClick={() => { logout(); setIsUserMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-500 hover:bg-red-50 rounded-2xl"><LogOut className="w-4 h-4" /> Sign Out</button>
+                      <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-500 hover:bg-red-50 rounded-2xl"><LogOut className="w-4 h-4" /> Sign Out</button>
                     </div>
                   </div>
                 )}
@@ -274,13 +307,10 @@ const AppContent: React.FC = () => {
       <footer className="bg-white border-t border-slate-200 py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex justify-center items-center gap-3 mb-6">
-            <motion.img 
-              src="/logo.svg" 
+            <img 
+              src="/logo.png" 
               alt="Logo" 
-              className="h-[46px] w-[46px] object-contain drop-shadow-sm"
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              whileHover={{ scale: 1.05 }}
+              className="h-[80px] w-auto object-contain drop-shadow-sm"
             />
             <h2 className="font-brand text-xl font-extrabold uppercase tracking-[0.15em] text-slate-900 m-0 pt-1">Creative Events</h2>
           </div>

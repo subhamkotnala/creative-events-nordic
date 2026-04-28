@@ -199,6 +199,27 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
     }
   };
 
+  const handleServiceImageUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setIsProcessingImages(true);
+      try {
+        const filesArray = Array.from(e.target.files);
+        const filesToProcess = filesArray.slice(0, 5);
+        const compressedImages = await Promise.all(
+          filesToProcess.map(file => compressImage(file, 600, 600, 0.4))
+        );
+        const s = [...services];
+        if (!s[idx].imageUrls) s[idx].imageUrls = [];
+        s[idx].imageUrls = [...(s[idx].imageUrls || []), ...compressedImages].slice(0, 5);
+        setServices(s);
+      } catch (err) {
+        console.error("Service image processing failed", err);
+      } finally {
+        setIsProcessingImages(false);
+      }
+    }
+  };
+
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setIsProcessingImages(true);
@@ -496,19 +517,43 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                 <button type="button" onClick={() => setServices(services.filter(s => s.id !== service.id))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <input placeholder="Service Title (e.g. Budget Wedding Package)" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-1 focus:ring-sky-500" value={service.name} onChange={e => {
-                  const s = [...services]; s[idx].name = e.target.value; setServices(s);
-                }} />
-                <div className="flex gap-4 items-center">
-                  <div className="relative w-32">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">SEK</span>
-                    <input type="number" className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-sm font-bold outline-none focus:ring-1 focus:ring-sky-500" value={service.price} onChange={e => {
-                      const s = [...services]; s[idx].price = Number(e.target.value); setServices(s);
+                <div className="flex flex-col gap-4">
+                  {service.imageUrls && service.imageUrls.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {service.imageUrls.map((url, imgIdx) => (
+                        <div key={imgIdx} className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 border border-slate-200">
+                          <img src={url} className="w-full h-full object-cover" alt="Service" />
+                          <button type="button" onClick={() => {
+                            const s = [...services]; 
+                            s[idx].imageUrls = s[idx].imageUrls?.filter((_, i) => i !== imgIdx); 
+                            setServices(s);
+                          }} className="absolute top-1 right-1 p-1 bg-white text-red-500 rounded-full shadow-lg">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex-grow space-y-4">
+                    <input placeholder="Service Title (e.g. Budget Wedding Package)" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-1 focus:ring-sky-500" value={service.name} onChange={e => {
+                      const s = [...services]; s[idx].name = e.target.value; setServices(s);
                     }} />
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      <div className="relative w-full sm:w-32 flex-shrink-0">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">SEK</span>
+                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-sm font-bold outline-none focus:ring-1 focus:ring-sky-500" value={service.price} onChange={e => {
+                          const s = [...services]; s[idx].price = Number(e.target.value); setServices(s);
+                        }} />
+                      </div>
+                      <input placeholder="Short description..." className="flex-grow w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={service.description} onChange={e => {
+                        const s = [...services]; s[idx].description = e.target.value; setServices(s);
+                      }} />
+                      <label className="flex-shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 border border-slate-200">
+                        <Camera className="w-4 h-4" /> Add Photo
+                        <input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleServiceImageUpload(idx, e)} />
+                      </label>
+                    </div>
                   </div>
-                  <input placeholder="Short description..." className="flex-grow bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={service.description} onChange={e => {
-                    const s = [...services]; s[idx].description = e.target.value; setServices(s);
-                  }} />
                 </div>
               </div>
             ))}

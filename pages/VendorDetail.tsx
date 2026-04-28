@@ -6,8 +6,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Instagram, Facebook, Send, X, CheckCircle2, Music, Loader2, User, MessageSquare, Globe } from 'lucide-react';
+import { MapPin, Mail, Calendar, ArrowLeft, Instagram, Facebook, Send, X, CheckCircle2, Music, Loader2, User, MessageSquare, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface VendorDetailProps {
   vendors: Vendor[];
@@ -30,6 +31,16 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', message: '' });
   const [showCalendar, setShowCalendar] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isGalleryImageLoading, setIsGalleryImageLoading] = useState(true);
+
+  useEffect(() => {
+    if (activeGallery) {
+      setCurrentImageIndex(activeGallery.initialIndex);
+      setIsGalleryImageLoading(true);
+    }
+  }, [activeGallery]);
   
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +78,12 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.date || !formData.message.trim()) {
+      alert(language === 'sv' ? 'Vänligen fyll i alla fält (inklusive datum).' : 'Please fill out all fields (including the date).');
+      return;
+    }
+    
     setIsSending(true);
 
     try {
@@ -195,6 +212,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
                     <input 
                       type="tel" 
+                      required
                       name="phone" 
                       value={formData.phone} 
                       onChange={handleFormChange} 
@@ -206,6 +224,14 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                   {/* Date Picker */}
                   <div className="space-y-1.5 relative" ref={calendarRef}>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('vendorDetail.eventDate')}</label>
+                    <input 
+                      type="text" 
+                      required 
+                      className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-12 opacity-0 pointer-events-none -z-10" 
+                      value={formData.date} 
+                      onChange={() => {}} 
+                      tabIndex={-1} 
+                    />
                     <button 
                       type="button"
                       onClick={() => setShowCalendar(!showCalendar)}
@@ -276,6 +302,98 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
         </div>
       )}
       
+      <AnimatePresence>
+        {activeGallery && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/95 backdrop-blur-sm"
+          >
+            <button 
+              onClick={() => setActiveGallery(null)} 
+              className="absolute top-6 right-6 p-2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all z-20"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="relative w-full max-w-6xl px-4 flex items-center justify-center h-[80vh]">
+              {activeGallery.images.length > 1 && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsGalleryImageLoading(true);
+                    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : activeGallery.images.length - 1));
+                  }}
+                  className="absolute left-4 md:left-8 p-3 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all z-20"
+                >
+                  <ChevronLeft className="w-8 h-8" />
+                </button>
+              )}
+
+              {isGalleryImageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <Loader2 className="w-10 h-10 text-white/50 animate-spin" />
+                </div>
+              )}
+              
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={currentImageIndex}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: isGalleryImageLoading ? 0 : 1, scale: isGalleryImageLoading ? 0.95 : 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  src={activeGallery.images[currentImageIndex]} 
+                  className="max-w-full max-h-full object-contain"
+                  alt="Gallery Preview"
+                  onLoad={() => setIsGalleryImageLoading(false)}
+                />
+              </AnimatePresence>
+
+              {activeGallery.images.length > 1 && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsGalleryImageLoading(true);
+                    setCurrentImageIndex((prev) => (prev < activeGallery.images.length - 1 ? prev + 1 : 0));
+                  }}
+                  className="absolute right-4 md:right-8 p-3 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all z-20"
+                >
+                  <ChevronRight className="w-8 h-8" />
+                </button>
+              )}
+            </div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="absolute bottom-8 left-0 right-0 flex justify-center flex-wrap gap-2 px-4 z-20"
+            >
+              {activeGallery.images.map((img, i) => (
+                <button 
+                  key={i}
+                  onClick={() => {
+                    if (i !== currentImageIndex) {
+                      setIsGalleryImageLoading(true);
+                      setCurrentImageIndex(i);
+                    }
+                  }}
+                  className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 border-transparent opacity-50 hover:opacity-100 relative`}
+                >
+                  {i === currentImageIndex && (
+                     <motion.div layoutId="activeImageBorder" className="absolute inset-0 border-2 border-sky-500 rounded-xl" />
+                  )}
+                  <img src={img} className={`w-full h-full object-cover transition-all ${i === currentImageIndex ? 'scale-110 opacity-100' : ''}`} alt="" />
+                </button>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="h-[65vh] w-full relative overflow-hidden bg-slate-200">
         <img src={vendor.imageUrl} className="w-full h-full object-cover" alt={vendor.name} />
         <Link to="/explore" className="absolute top-8 left-8 bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg hover:scale-110 transition-transform">
@@ -302,7 +420,11 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                   <h2 className="text-2xl serif text-slate-800">{t('vendorDetail.portfolio')}</h2>
                   <div className="grid grid-cols-2 gap-4">
                     {vendor.imageUrls.map((url, i) => (
-                      <div key={i} className="aspect-square rounded-[2rem] overflow-hidden bg-slate-100">
+                      <div 
+                        key={i} 
+                        onClick={() => setActiveGallery({ images: vendor.imageUrls!, initialIndex: i })}
+                        className="aspect-square rounded-[2rem] overflow-hidden bg-slate-100 cursor-pointer"
+                      >
                         <img src={url} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt={`${vendor.name} work ${i+1}`} />
                       </div>
                     ))}
@@ -315,13 +437,28 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
               <h2 className="text-3xl serif px-6">{t('vendorDetail.offerings')}</h2>
               <div className="grid md:grid-cols-2 gap-8">
                 {vendor.services.map(service => (
-                  <div key={service.id} className="bg-white p-10 border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group">
-                    <div className="flex justify-between items-start mb-6">
-                      <h3 className="text-xl font-medium text-slate-800 group-hover:text-sky-600 transition-colors">{service.name}</h3>
-                      <p className="text-[10px] font-bold text-sky-600 bg-sky-50 px-3 py-1 rounded-full uppercase tracking-widest">{t('vendorDetail.from')} {service.price.toLocaleString()} SEK</p>
+                  <div key={service.id} className="bg-white p-6 md:p-10 border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group flex flex-col">
+                    {service.imageUrls && service.imageUrls.length > 0 && (
+                      <div className="w-full grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6 flex-shrink-0">
+                        {service.imageUrls.map((url, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => setActiveGallery({ images: service.imageUrls!, initialIndex: i })}
+                            className="rounded-xl overflow-hidden cursor-pointer bg-slate-100 aspect-square"
+                          >
+                            <img src={url} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" alt={`${service.name} ${i+1}`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex-grow">
+                      <div className="flex justify-between items-start mb-6">
+                        <h3 className="text-xl font-medium text-slate-800 group-hover:text-sky-600 transition-colors">{service.name}</h3>
+                        <p className="text-[10px] font-bold text-sky-600 bg-sky-50 px-3 py-1 rounded-full uppercase tracking-widest">{t('vendorDetail.from')} {service.price.toLocaleString()} SEK</p>
+                      </div>
+                      <p className="text-slate-500 text-sm leading-relaxed mb-8 font-light h-20 line-clamp-4">{service.description}</p>
                     </div>
-                    <p className="text-slate-500 text-sm leading-relaxed mb-8 font-light h-20 line-clamp-4">{service.description}</p>
-                    <button onClick={() => setIsModalOpen(true)} className="w-full py-4 border border-slate-200 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-slate-900 hover:text-white transition-all shadow-sm">
+                    <button onClick={() => setIsModalOpen(true)} className="w-full py-4 border border-slate-200 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-slate-900 hover:text-white transition-all shadow-sm mt-auto">
                       {t('vendorDetail.inquireNow')}
                     </button>
                   </div>

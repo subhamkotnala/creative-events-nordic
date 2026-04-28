@@ -74,14 +74,14 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
     setIsSending(true);
     try {
       await emailjs.send(
-        "service_fcxafes",
-        "template_cqrzyss",
+        import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_fcxafes",
+        import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID || "template_cqrzyss",
         {
           message: contactForm.vision,
           user_email: contactForm.email,
           user_phone: contactForm.phone || 'Not provided'
         },
-        "xaAogphDl0s4ydiOa"
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "xaAogphDl0s4ydiOa"
       );
       setFormSubmitted(true);
       setContactForm({ vision: '', email: '', phone: '' });
@@ -336,7 +336,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone Number</label>
                       <input 
-                        type="tel"
+                        type="tel" required
                         value={contactForm.phone}
                         onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 

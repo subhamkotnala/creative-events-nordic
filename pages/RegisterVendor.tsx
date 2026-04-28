@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Vendor } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ShieldCheck, Eye, EyeOff, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Lock, CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface RegisterVendorProps {
   vendors: Vendor[];
@@ -20,6 +20,7 @@ const RegisterVendor: React.FC<RegisterVendorProps> = ({ vendors, onUpdateVendor
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!vendor) {
     return (
@@ -35,8 +36,15 @@ const RegisterVendor: React.FC<RegisterVendorProps> = ({ vendors, onUpdateVendor
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      setError("Passwords do not match.");
+      return;
+    }
+    
+    if (vendor.password && password === vendor.password) {
+      setError("New password cannot be the same as the generated password.");
       return;
     }
     
@@ -58,7 +66,7 @@ const RegisterVendor: React.FC<RegisterVendorProps> = ({ vendors, onUpdateVendor
           </div>
           <h1 className="text-5xl serif leading-tight">Registration Complete</h1>
           <p className="text-slate-500 text-lg font-light leading-relaxed">
-            Your credentials for <span className="text-slate-900 font-medium">{vendor.email}</span> have been secured. You can now access your merchant dashboard and manage your services.
+            Your credentials for <span className="text-slate-900 font-medium">{vendor.email}</span> have been secured. You can now access your vendor dashboard and manage your services.
           </p>
           <button 
             onClick={() => navigate('/dashboard')} 
@@ -79,12 +87,19 @@ const RegisterVendor: React.FC<RegisterVendorProps> = ({ vendors, onUpdateVendor
             <ShieldCheck className="w-10 h-10" />
           </div>
           <h1 className="text-4xl serif">Activate Account</h1>
-          <p className="text-slate-500 font-light">Set a secure password for your merchant identity at Creative Events.</p>
+          <p className="text-slate-500 font-light">Set a secure password for your vendor identity at Creative Events.</p>
         </div>
 
         <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 animate-in fade-in">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p className="text-xs font-bold uppercase tracking-wide">{error}</p>
+            </div>
+          )}
+
           <div className="mb-10 pb-6 border-b border-slate-50">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-2">Merchant User ID</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-2">Vendor User ID</p>
             <p className="text-lg font-medium text-slate-900">{vendor.email}</p>
           </div>
 

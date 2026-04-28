@@ -34,6 +34,7 @@ export interface Service {
   name: string;
   description: string;
   price: number;
+  imageUrls?: string[];
 }
 
 export interface Vendor {

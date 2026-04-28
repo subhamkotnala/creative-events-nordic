@@ -402,12 +402,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="grid sm:grid-cols-2 gap-4">
                       {v.services && v.services.length > 0 ? (
                         v.services.map(s => (
-                          <div key={s.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                            <div className="flex justify-between items-start mb-1">
-                              <h5 className="text-xs font-semibold">{s.name}</h5>
-                              <span className="text-[9px] font-bold text-sky-600">{s.price.toLocaleString()} SEK</span>
+                          <div key={s.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-3">
+                            {s.imageUrls && s.imageUrls.length > 0 && (
+                              <div className="flex gap-2 overflow-x-auto pb-2">
+                                {s.imageUrls.map((url, i) => (
+                                  <div key={i} className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                                    <img src={url} className="w-full h-full object-cover" alt={s.name} />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex-grow">
+                              <div className="flex justify-between items-start mb-1">
+                                <h5 className="text-xs font-semibold">{s.name}</h5>
+                                <span className="text-[9px] font-bold text-sky-600">{s.price.toLocaleString()} SEK</span>
+                              </div>
+                              <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">{s.description}</p>
                             </div>
-                            <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">{s.description}</p>
                           </div>
                         ))
                       ) : (
@@ -576,7 +587,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <input className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={editingVendor.phone || ''} onChange={e => setEditingVendor({...editingVendor, phone: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Merchant Category</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Vendor Category</label>
                     <select className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none cursor-pointer" value={editingVendor.category} onChange={e => setEditingVendor({...editingVendor, category: e.target.value as VendorCategory})}>
                       {Object.values(VendorCategory).map(c => <option key={c} value={c}>{c}</option>)}
                     </select>

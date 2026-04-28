@@ -57,9 +57,9 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
           />
         </div>
         
-        <div className="flex gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <select 
-            className="flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
+            className="w-full sm:w-auto flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -67,7 +67,7 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
           </select>
 
           <select 
-            className="flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
+            className="w-full sm:w-auto flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           >
@@ -76,7 +76,7 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
           </select>
           
           <select 
-            className="flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
+            className="w-full sm:w-auto flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
             value={minRating}
             onChange={(e) => setMinRating(Number(e.target.value))}
           >

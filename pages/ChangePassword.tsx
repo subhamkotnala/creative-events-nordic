@@ -39,7 +39,7 @@ const ChangePassword: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setError("Failed to update password. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to update password. Please try again.");
       console.error(err);
     } finally {
       setIsSubmitting(false);

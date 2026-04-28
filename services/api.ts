@@ -255,12 +255,42 @@ class ApiService {
   }
 
   async changePassword(userId: string, newPassword: string): Promise<void> {
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('password')
+        .eq('id', userId)
+        .single();
+        
+    if (profile && profile.password === newPassword) {
+        throw new Error("New password cannot be the same as the old password.");
+    }
+
     const { error } = await supabase
         .from('profiles')
         .update({ password: newPassword })
         .eq('id', userId);
         
     if (error) throw error;
+  }
+
+  async checkEmailExists(email: string): Promise<boolean> {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('email', email)
+      .maybeSingle();
+
+    if (profile) return true;
+
+    const { data: app } = await supabase
+      .from('applications')
+      .select('id')
+      .ilike('email', email)
+      .maybeSingle();
+
+    if (app) return true;
+
+    return false;
   }
 
   // --- MAPPERS ---
@@ -296,7 +326,9 @@ class ApiService {
           isFeatured: p.is_featured,
           views: p.views || 0,
           inquiries: p.inquiries || 0,
-          socials: p.socials || {}
+          socials: p.socials || {},
+          password: p.password,
+          passwordSet: p.password !== undefined && p.password !== '123456' // Just as an indicator, but password is the key
       };
   }
 
