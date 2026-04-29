@@ -73,16 +73,22 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
     e.preventDefault();
     setIsSending(true);
     try {
-      await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_fcxafes",
-        import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID || "template_cqrzyss",
-        {
-          message: contactForm.vision,
-          user_email: contactForm.email,
-          user_phone: contactForm.phone || 'Not provided'
-        },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "xaAogphDl0s4ydiOa"
-      );
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateType: 'CONTACT_SUPPORT',
+          data: {
+            message: contactForm.vision,
+            user_email: contactForm.email,
+            user_phone: contactForm.phone || 'Not provided'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send contact form');
+      }
       setFormSubmitted(true);
       setContactForm({ vision: '', email: '', phone: '' });
       setTimeout(() => setFormSubmitted(false), 5000);

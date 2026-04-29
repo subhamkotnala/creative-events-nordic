@@ -89,6 +89,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
     try {
       const templateParams = {
         vendor_name: vendor.name,
+        vendor_email: vendor.email,
         user_name: formData.name,
         user_email: formData.email,
         user_phone: formData.phone || 'Not provided',
@@ -96,25 +97,33 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
         message: formData.message,
       };
 
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
-      );
+      const res1 = await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateType: 'VENDOR_INQUIRY',
+          data: templateParams
+        })
+      });
+
+      if (!res1.ok) throw new Error('Failed to send vendor inquiry');
 
       // Send acknowledgment email to the user
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_ACK_TEMPLATE_ID,
-        {
-          vendor_name: vendor.name,
-          event_date: formData.date || 'Not specified',
-          user_email: formData.email,
-          user_name: formData.name,
-        },
-        EMAILJS_PUBLIC_KEY
-      );
+      const res2 = await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateType: 'VENDOR_INQUIRY_ACK',
+          data: {
+            vendor_name: vendor.name,
+            event_date: formData.date || 'Not specified',
+            user_email: formData.email,
+            user_name: formData.name,
+          }
+        })
+      });
+
+      if (!res2.ok) throw new Error('Failed to send acknowledgment');
 
       // Increment inquiry count in database
       if (vendor.id) {

@@ -118,18 +118,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         // 2. Email First: Send email using EmailJS
         try {
             // Note: Sending parameters: business_name, email, generated_password as requested
-            await emailjs.send(
-                EMAILJS_SERVICE_ID,
-                EMAILJS_TEMPLATE_ID,
-                {
-                    business_name: v.name,
-                    to_email: v.email, 
-                    email: v.email,
-                    generated_password: generatedPassword, // Updated to match template variable
-                    to_name: v.name,
-                },
-                EMAILJS_PUBLIC_KEY
-            );
+            const response = await fetch('/api/email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    templateType: 'VENDOR_APPROVAL',
+                    data: {
+                        business_name: v.name,
+                        to_email: v.email, 
+                        email: v.email,
+                        generated_password: generatedPassword, // Updated to match template variable
+                        to_name: v.name,
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to send email');
+            }
 
             // 3. Database Second: Wait for email success, then move record
             await onUpdateStatus(v.id, VendorStatus.APPROVED, generatedPassword);
