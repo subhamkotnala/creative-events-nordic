@@ -202,31 +202,25 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
       
       // Send notification email
       try {
-        const res1 = await fetch('/api/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            templateType: 'MARKETPLACE_JOIN_ALERT',
-            data: { vendor_name: newVendor.name }
-          })
-        });
-
-        if (!res1.ok) console.error("Failed to send admin notification email");
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_JOIN_TEMPLATE_ID,
+          {
+            vendor_name: newVendor.name
+          },
+          EMAILJS_PUBLIC_KEY
+        );
 
         // Send acknowledgment email to the vendor
-        const res2 = await fetch('/api/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            templateType: 'MARKETPLACE_JOIN_ACK',
-            data: {
-              user_email: newVendor.email,
-              vendor_name: newVendor.name
-            }
-          })
-        });
-
-        if (!res2.ok) console.error("Failed to send vendor ack email");
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_JOIN_ACK_TEMPLATE_ID,
+          {
+            user_email: newVendor.email,
+            vendor_name: newVendor.name
+          },
+          EMAILJS_PUBLIC_KEY
+        );
       } catch (emailErr) {
         console.error("Failed to send join notification or acknowledgment email:", emailErr);
         // We don't want to block the success UI if just the email fails
