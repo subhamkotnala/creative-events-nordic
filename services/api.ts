@@ -8,82 +8,30 @@ class ApiService {
     return Promise.resolve();
   }
 
-  // --- AUTH METHODS ---
+  // --- AUTH METHODS (Refactored to Supabase Auth - to be implemented fully) ---
   async login(email: string, password?: string): Promise<Session> {
-    if (!password) {
-      throw new Error("Password is required");
-    }
-
-    // AUTHENTICATION STRATEGY: 
-    // We strictly use the 'profiles' table for authentication.
-    // Supabase Auth (GoTrue) logic has been completely removed as per requirements.
-
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error || !profile) {
-      throw new Error("Invalid credentials: User not found.");
-    }
-
-    // Password check (Plaintext comparison as per current simple architecture)
-    if (profile.password !== password) {
-      throw new Error("Invalid credentials: Password incorrect.");
-    }
-
-    const user = this.mapProfileToUser(profile);
-    
-    // Create a custom session token
-    const session = { 
-      user, 
-      token: 'ce-custom-token-' + Date.now() 
-    };
-
-    // Persist session
-    localStorage.setItem('ce_session', JSON.stringify(session));
-    return session;
+    throw new Error("Login functionality is being migrated to Supabase Auth SDK.");
   }
 
   async logout() {
-    // Simply clear the local storage session
-    localStorage.removeItem('ce_session');
+    await supabase.auth.signOut();
   }
 
   async getCurrentSession(): Promise<Session | null> {
-    const saved = localStorage.getItem('ce_session');
-    if (!saved) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !session.user) return null;
 
-    try {
-      const session = JSON.parse(saved);
-      
-      // Verification step: Ensure the user still exists in the database
-      // This prevents using stale sessions if a user is deleted/banned
-      if (session?.user?.id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profile) {
-          // Refresh user details in the session (e.g. if role changed)
-          const user = this.mapProfileToUser(profile);
-          const newSession = { ...session, user };
-          localStorage.setItem('ce_session', JSON.stringify(newSession));
-          return newSession;
-        }
-      }
-      
-      // If validation fails (no profile found), clear session
-      localStorage.removeItem('ce_session');
-      return null;
-    } catch (e) {
-      // If JSON parse fails
-      localStorage.removeItem('ce_session');
-      return null;
-    }
+    // Fetch profile for role checking
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+        
+    return {
+        user: profile ? this.mapProfileToUser(profile) : { id: session.user.id, email: session.user.email || '', name: session.user.email || '', role: 'USER', favorites: [], createdAt: '', avatarUrl: '' },
+        token: session.access_token
+    } as Session;
   }
 
   // --- VENDOR METHODS ---
@@ -137,30 +85,27 @@ class ApiService {
 
   async saveVendor(vendor: Vendor): Promise<void> {
     if (vendor.status === VendorStatus.APPROVED) {
-        // Update existing approved vendor in profiles
+        // Upsert approved vendor in profiles
         const updateData: any = {
+            id: vendor.id,
             business_name: vendor.name,
-            service_type: vendor.category,
-            location: vendor.location,
-            description: vendor.description,
-            image_url: vendor.imageUrl,
-            image_urls: vendor.imageUrls,
+            email: vendor.email,
+            role: 'VENDOR',
             phone: vendor.phone,
             website: vendor.website,
             socials: vendor.socials,
             services: vendor.services,
             is_featured: vendor.isFeatured,
-            rating: vendor.rating
+            rating: vendor.rating,
+            application_story: vendor.applicationStory,
+            application_location: vendor.applicationLocation,
+            application_image_url: vendor.applicationImageUrl,
+            application_gallery_urls: vendor.applicationGalleryUrls
         };
-
-        if (vendor.password) {
-            updateData.password = vendor.password;
-        }
 
         const { error } = await supabase
             .from('profiles')
-            .update(updateData)
-            .eq('id', vendor.id);
+            .upsert(updateData);
         if (error) throw error;
     } else {
         // Create or Update Application
@@ -168,16 +113,16 @@ class ApiService {
             id: vendor.id, // Explicitly pass ID for upsert
             business_name: vendor.name,
             email: vendor.email,
-            service_type: vendor.category,
-            location: vendor.location,
-            description: vendor.description,
-            image_url: vendor.imageUrl,
-            image_urls: vendor.imageUrls || [],
             phone: vendor.phone,
             website: vendor.website,
             socials: vendor.socials || {},
             services: vendor.services || [],
-            status: vendor.status || 'PENDING'
+            status: vendor.status || 'PENDING',
+            application_story: vendor.applicationStory,
+            application_location: vendor.applicationLocation,
+            application_image_url: vendor.applicationImageUrl,
+            application_gallery_urls: vendor.applicationGalleryUrls,
+            auth_id: vendor.auth_id
         };
 
         // Use UPSERT to handle both creation of new applications (with client-gen IDs)
@@ -187,13 +132,32 @@ class ApiService {
     }
   }
 
-  async deleteVendor(id: string): Promise<void> {
-    await supabase.from('profiles').delete().eq('id', id);
-    await supabase.from('applications').delete().eq('id', id);
+  async deleteUser(auth_id: string): Promise<void> {
+    const response = await fetch(`/api/users/${auth_id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to delete user");
+    }
   }
 
-  async updateVendorStatus(id: string, status: VendorStatus, password?: string): Promise<void> {
+  async deleteVendor(id: string): Promise<void> {
+    const { error } = await supabase.rpc('delete_user_by_admin', { target_user_id: id });
+    if (error) {
+      console.warn("Failed to delete user via RPC. Fallback to standard delete.", error);
+      // Try to delete by id (vendor.id) and auth_id (in case auth_id was passed)
+      await supabase.from('profiles').delete().eq('id', id);
+      await supabase.from('profiles').delete().eq('auth_id', id);
+      await supabase.from('applications').delete().eq('id', id);
+      await supabase.from('applications').delete().eq('auth_id', id);
+    }
+  }
+
+  async updateVendorStatus(id: string, status: VendorStatus): Promise<void> {
     if (status === VendorStatus.APPROVED) {
+        // 1. Fetch application record
         const { data: app, error: fetchError } = await supabase
             .from('applications')
             .select('*')
@@ -201,31 +165,40 @@ class ApiService {
             .single();
         
         if (fetchError || !app) throw new Error("Application not found.");
+        
+        if (!app.auth_id) throw new Error("Application is not linked to a user.");
 
-        // Move from applications to profiles
-        const { error: insertError } = await supabase.from('profiles').insert([{
-           id: app.id, 
-           email: app.email,
-           role: 'VENDOR',
-           business_name: app.business_name,
-           service_type: app.service_type,
-           location: app.location,
-           description: app.description,
-           image_url: app.image_url,
-           image_urls: app.image_urls,
-           phone: app.phone,
-           website: app.website,
-           socials: app.socials,
-           services: app.services,
-           is_featured: false,
-           rating: 0,
-           joined_at: new Date().toISOString(),
-           password: password || 'password123'
-        }]);
+        // 2. Find existing profile record
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('auth_id', app.auth_id)
+            .single();
 
-        if (insertError) throw insertError;
+        if (profileError || !profile) throw new Error("Profile not found for this user.");
 
-        await supabase.from('applications').delete().eq('id', id);
+        // 3. Update existing profile record from application details
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+                role: 'VENDOR',
+                business_name: app.business_name,
+                phone: app.phone,
+                website: app.website,
+                socials: app.socials,
+                services: app.services,
+                application_story: app.application_story,
+                application_location: app.application_location,
+                application_image_url: app.application_image_url,
+                application_gallery_urls: app.application_gallery_urls
+            })
+            .eq('id', profile.id); // Update by profile.id
+
+        if (updateError) throw updateError;
+
+        // 4. Delete the application record
+        const { error: deleteError } = await supabase.from('applications').delete().eq('id', id);
+        if (deleteError) throw deleteError;
     } else {
         const { error } = await supabase.from('applications').update({ status }).eq('id', id);
         if (error) throw error;
@@ -255,40 +228,31 @@ class ApiService {
   }
 
   async changePassword(userId: string, newPassword: string): Promise<void> {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('password')
-        .eq('id', userId)
-        .single();
-        
-    if (profile && profile.password === newPassword) {
-        throw new Error("New password cannot be the same as the old password.");
-    }
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ password: newPassword })
-        .eq('id', userId);
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
         
     if (error) throw error;
   }
 
   async checkEmailExists(email: string): Promise<boolean> {
-    const { data: profile } = await supabase
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('id')
       .ilike('email', email)
-      .maybeSingle();
+      .limit(1);
 
-    if (profile) return true;
+    if (profiles && profiles.length > 0) return true;
 
-    const { data: app } = await supabase
+    // Only block if there is an application that is NOT rejected
+    const { data: apps } = await supabase
       .from('applications')
       .select('id')
       .ilike('email', email)
-      .maybeSingle();
+      .neq('status', VendorStatus.REJECTED)
+      .limit(1);
 
-    if (app) return true;
+    if (apps && apps.length > 0) return true;
 
     return false;
   }
@@ -302,7 +266,7 @@ class ApiService {
           role: p.role as any,
           favorites: [], 
           createdAt: p.joined_at,
-          avatarUrl: p.image_url
+          avatarUrl: p.application_image_url || p.services?.[0]?.imageUrl || p.avatarUrl
       };
   }
 
@@ -311,11 +275,6 @@ class ApiService {
           id: p.id,
           userId: p.id,
           name: p.business_name,
-          category: p.service_type as VendorCategory,
-          location: p.location || 'Sweden',
-          description: p.description || '',
-          imageUrl: p.image_url || '',
-          imageUrls: p.image_urls || [],
           status: status,
           services: p.services || [],
           email: p.email,
@@ -327,8 +286,10 @@ class ApiService {
           views: p.views || 0,
           inquiries: p.inquiries || 0,
           socials: p.socials || {},
-          password: p.password,
-          passwordSet: p.password !== undefined && p.password !== '123456' // Just as an indicator, but password is the key
+          applicationStory: p.application_story,
+          applicationLocation: p.application_location,
+          applicationImageUrl: p.application_image_url,
+          applicationGalleryUrls: p.application_gallery_urls
       };
   }
 
@@ -337,11 +298,6 @@ class ApiService {
           id: a.id,
           userId: 'pending',
           name: a.business_name,
-          category: a.service_type as VendorCategory,
-          location: a.location || 'Sweden',
-          description: a.description || '',
-          imageUrl: a.image_url || '',
-          imageUrls: a.image_urls || [],
           status: a.status as VendorStatus,
           services: a.services || [],
           email: a.email,
@@ -350,7 +306,12 @@ class ApiService {
           joinedAt: a.created_at,
           rating: 0,
           isFeatured: false,
-          socials: a.socials || {}
+          socials: a.socials || {},
+          verified: !!a.verified,
+          applicationStory: a.application_story,
+          applicationLocation: a.application_location,
+          applicationImageUrl: a.application_image_url,
+          applicationGalleryUrls: a.application_gallery_urls
       };
   }
 }

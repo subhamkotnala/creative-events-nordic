@@ -1,21 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
-import { Vendor, VendorService, VendorCategory, VendorStatus } from '../types';
+import { Vendor, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Search, MapPin, Star, Building2 } from 'lucide-react';
+import { Search, MapPin, Star } from 'lucide-react';
 
-interface ExploreProps {
+interface OurVendorsProps {
   vendors: Vendor[];
 }
 
-interface FlattenedService {
-  vendor: Vendor;
-  service: VendorService;
-}
-
-const Explore: React.FC<ExploreProps> = ({ vendors }) => {
+const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const routerLocation = useLocation();
@@ -31,25 +25,27 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
     if (loc) setLocation(loc);
   }, [searchParams]);
 
-  // Flatten the services so they act as individual items in the marketplace
-  const allServices: FlattenedService[] = vendors
-    .filter(v => v.status === VendorStatus.APPROVED && v.services && v.services.length > 0)
-    .flatMap(v => v.services.map(s => ({ vendor: v, service: s })));
-
-  const filteredServices = allServices.filter(({ vendor, service }) => {
-    const matchesCat = category === 'All' || service.category === category;
-                       
-    const matchesLoc = location === 'All' || service.location === location || vendor.applicationLocation === location;
-                       
-    const matchesSearch = !search || 
-                          (service.description?.toLowerCase() || '').includes(search.toLowerCase()) ||
-                          (service.category?.toLowerCase() || '').includes(search.toLowerCase()) ||
-                          (service.packages?.some(p => (p.name?.toLowerCase() || '').includes(search.toLowerCase()) || (p.description?.toLowerCase() || '').includes(search.toLowerCase())) || false) ||
-                          (vendor.name?.toLowerCase() || '').includes(search.toLowerCase());
-                          
-    const matchesRating = vendor.rating >= minRating;
+  const filteredVendors = vendors.filter(v => {
+    const hasServices = v.services && v.services.length > 0;
     
-    return matchesCat && matchesLoc && matchesSearch && matchesRating;
+    const matchesCat = category === 'All' || 
+                       (hasServices && v.services.some(s => s.category === category));
+                       
+    const matchesLoc = location === 'All' || 
+                       v.applicationLocation === location ||
+                       (hasServices && v.services.some(s => s.location === location));
+                       
+    const matchesSearch = (v.name?.toLowerCase() || '').includes(search.toLowerCase()) || 
+                          (hasServices && v.services.some(s => 
+                            (s.description?.toLowerCase() || '').includes(search.toLowerCase()) ||
+                            (s.category?.toLowerCase() || '').includes(search.toLowerCase()) ||
+                            (s.packages?.some(p => (p.name?.toLowerCase() || '').includes(search.toLowerCase()) || (p.description?.toLowerCase() || '').includes(search.toLowerCase())) || false)
+                          )) ||
+                          (v.applicationStory?.toLowerCase() || '').includes(search.toLowerCase());
+                          
+    const matchesRating = v.rating >= minRating;
+    
+    return matchesCat && matchesLoc && matchesSearch && matchesRating && v.status === VendorStatus.APPROVED;
   });
 
   const categories = ['All', ...Object.values(VendorCategory)];
@@ -57,8 +53,8 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="mb-12">
-        <h1 className="text-4xl serif mb-4">{t('explore.title')}</h1>
-        <p className="text-slate-500">Discover packages and services from our verified partners.</p>
+        <h1 className="text-4xl serif mb-4">Our Vendors</h1>
+        <p className="text-slate-500">Discover all verified partners in the Creative Events network.</p>
       </div>
 
       {/* Filters */}
@@ -67,7 +63,7 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search services..." 
+            placeholder="Search vendors..." 
             className="w-full pl-12 pr-4 py-3 bg-slate-100 border-none rounded-xl text-sm focus:ring-1 focus:ring-sky-500 outline-none font-medium"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -107,50 +103,57 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {filteredServices.length > 0 ? (
-          filteredServices.map(({ vendor, service }) => (
-            <Link key={`${vendor.id}-${service.id}`} to={`/services/${vendor.id}/${service.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="group">
+        {filteredVendors.length > 0 ? (
+          filteredVendors.map(vendor => {
+            let activeService = vendor.services?.find(s => {
+              const catMatch = category === 'All' || s.category === category;
+              const locMatch = location === 'All' || s.location === location;
+              const searchMatch = !search || 
+                                 (s.description?.toLowerCase() || '').includes(search.toLowerCase()) ||
+                                 (s.category?.toLowerCase() || '').includes(search.toLowerCase()) ||
+                                 (s.packages?.some(p => (p.name?.toLowerCase() || '').includes(search.toLowerCase())) || false);
+
+              return catMatch && locMatch && searchMatch;
+            });
+
+            if (!activeService) activeService = vendor.services?.[0];
+
+            return (
+            <Link key={vendor.id} to={`/vendors/${vendor.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="group">
               <div className="aspect-[4/3] overflow-hidden rounded-2xl mb-6 bg-slate-200">
                 <img 
-                  src={service.imageUrl || service.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+                  src={activeService?.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                  alt={service.category}
+                  alt={vendor.name}
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-xl serif group-hover:text-sky-600 transition-colors leading-tight">{t(`categories.${service.category}`)}</h3>
-                  <div className="flex items-center gap-1 text-[10px] text-slate-400 uppercase tracking-widest shrink-0 mt-1.5">
-                    <MapPin className="w-3 h-3" /> {service.location || vendor.applicationLocation}
-                  </div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {Array.from(new Set(vendor.services?.map(s => s.category) || [])).map(cat => (
+                    <span key={cat} className="text-[9px] uppercase tracking-widest text-sky-700 bg-sky-50 px-2 py-1 rounded-md font-bold">
+                      {t(`categories.${cat}`)}
+                    </span>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3 text-xs font-medium text-slate-400 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="w-3 h-3" />
-                    <span>by {vendor.name}</span>
-                  </div>
-                  <span className="text-slate-300">•</span>
-                  <div className="flex items-center gap-1 font-bold text-amber-500">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-xl serif group-hover:text-sky-600 transition-colors">{vendor.name}</h3>
+                  <div className="flex items-center gap-1 font-bold text-amber-500 text-[10px]">
                     <Star className="w-3 h-3" fill="currentColor" />
                     <span>{vendor.rating.toFixed(1)}</span>
                   </div>
                 </div>
                 <p className="text-slate-500 text-sm line-clamp-2 font-light leading-relaxed">
-                  {service.description}
+                  {activeService?.description || vendor.applicationStory || vendor.services?.[0]?.description}
                 </p>
-                {service.packages && service.packages.length > 0 && (
-                  <div className="pt-2">
-                    <span className="text-xs font-bold text-sky-600 bg-sky-50 px-2 py-1 rounded-md">
-                      {service.packages.length} Packages available
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                  <MapPin className="w-3 h-3" /> {vendor.applicationLocation || activeService?.location || vendor.services?.[0]?.location}
+                </div>
               </div>
             </Link>
-          ))
+          )})
         ) : (
           <div className="col-span-full py-24 text-center">
-            <p className="text-slate-400 serif text-2xl italic">No services found matching your criteria.</p>
+            <p className="text-slate-400 serif text-2xl italic">No vendors found matching your criteria in Sweden.</p>
           </div>
         )}
       </div>
@@ -158,4 +161,4 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
   );
 };
 
-export default Explore;
+export default OurVendors;

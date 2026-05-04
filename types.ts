@@ -24,12 +24,14 @@ export enum VendorCategory {
 export enum VendorStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
+  NOT_VERIFIED = 'NOT_VERIFIED',
+  VERIFIED = 'VERIFIED'
 }
 
 export type Language = 'en' | 'sv';
 
-export interface Service {
+export interface ServicePackage {
   id: string;
   name: string;
   description: string;
@@ -37,17 +39,23 @@ export interface Service {
   imageUrls?: string[];
 }
 
-export interface Vendor {
+export interface VendorService {
   id: string;
-  userId: string; // Linked to a User account
-  name: string;
   category: VendorCategory;
   location: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
   imageUrls?: string[];
+  packages: ServicePackage[];
+}
+
+export interface Vendor {
+  id: string;
+  userId: string; // Linked to a User account
+  auth_id?: string; // Optional auth_id
+  name: string;
   status: VendorStatus;
-  services: Service[];
+  services: VendorService[];
   email: string;
   phone?: string;
   website?: string;
@@ -56,15 +64,18 @@ export interface Vendor {
   isFeatured?: boolean;
   views?: number;
   inquiries?: number;
+  // Initial application details
+  applicationStory?: string;
+  applicationLocation?: string;
+  applicationImageUrl?: string;
+  applicationGalleryUrls?: string[];
   socials?: {
     instagram?: string;
     facebook?: string;
     linkedin?: string;
     tiktok?: string;
   };
-  // FIX: Added password fields to Vendor interface to resolve registration flow errors
-  password?: string;
-  passwordSet?: boolean;
+  verified?: boolean;
 }
 
 export type UserRole = 'USER' | 'VENDOR' | 'ADMIN';

@@ -58,13 +58,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
     try {
       const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
       
-      const vendorContext = approvedVendors.map(v => ({
-        name: v.name,
-        category: v.category,
-        location: v.location,
-        description: v.description,
-        services: v.services.map(s => `${s.name} (${s.price} SEK)`).join(', ')
-      }));
+      const vendorContext = approvedVendors.map(v => {
+        const primaryService = v.services?.[0];
+        return {
+          name: v.name,
+          category: primaryService?.category || '',
+          location: v.applicationLocation || primaryService?.location || '',
+          description: primaryService?.description || '',
+          services: v.services.map(vs => `${vs.category}: ` + (vs.packages || []).map(p => `${p.name} (${p.price} SEK)`).join(', ')).join(' | ')
+        };
+      });
 
       const systemPrompt = language === 'sv' 
         ? `Du är "Evie", en professionell, hjälpsam och värdeorienterad AI-assistent för Creative Events, en prisvärd svensk eventmarknadsplats.

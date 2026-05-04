@@ -30,7 +30,7 @@ export const translations = {
     search: {
       category: 'Category',
       location: 'Location',
-      all: 'All',
+      all: 'All Categories',
       allLocations: 'All Locations',
       anyRating: 'Any Rating',
       fourPlus: '4+ Stars',
@@ -146,7 +146,7 @@ export const translations = {
       ops: 'Ops',
       marketIntel: 'Market Intelligence',
       activityAudit: 'Activity Audit',
-      approveAndNotify: 'Approve & Send Credentials',
+      approveAndNotify: 'Approve',
       credentialsSent: 'Credentials Sent to '
     },
     categories: {
@@ -205,7 +205,7 @@ export const translations = {
     search: {
       category: 'Kategori',
       location: 'Plats',
-      all: 'Alla',
+      all: 'Alla kategorier',
       allLocations: 'Alla platser',
       anyRating: 'Alla betyg',
       fourPlus: '4+ Stjärnor',
@@ -321,7 +321,7 @@ export const translations = {
       ops: 'Ops',
       marketIntel: 'Marknadsinformation',
       activityAudit: 'Aktivitetsgranskning',
-      approveAndNotify: 'Godkänn & Skicka Inloggningsuppgifter',
+      approveAndNotify: 'Godkänn',
       credentialsSent: 'Inloggningsuppgifter skickade till '
     },
     categories: {

@@ -1,23 +1,19 @@
 
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Vendor, VendorCategory, VendorStatus, Service } from '../types';
+import { Vendor, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
-import { optimizeVendorDescription, generateServiceIdeas } from '../services/geminiService';
+import { optimizeVendorDescription } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
-  Plus, Sparkles, Check, Camera, UploadCloud,
-  Globe, Music, Loader2, Trash2, Instagram, Facebook, Rocket, TrendingUp, Users, AlertCircle
+  Globe, Music, Loader2, Instagram, Facebook, Rocket, TrendingUp, Users, AlertCircle, Check,
+  Camera, Trash2, Sparkles, UploadCloud, Lock
 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import { api } from '../services/api';
 import emailjs from '@emailjs/browser';
 
-// EmailJS Configuration
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_JOIN_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_JOIN_TEMPLATE_ID;
-const EMAILJS_JOIN_ACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_JOIN_ACK_TEMPLATE_ID || "template_uoqt3lo";
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
+// Image processing utility
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number = 0.5): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -53,6 +49,12 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
   });
 };
 
+// EmailJS Configuration
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_JOIN_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_JOIN_TEMPLATE_ID;
+const EMAILJS_JOIN_ACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_JOIN_ACK_TEMPLATE_ID || "template_uoqt3lo";
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
 interface JoinMarketplaceProps {
   onJoin: (v: Vendor) => Promise<void>;
 }
@@ -60,16 +62,17 @@ interface JoinMarketplaceProps {
 const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [isGeneratingServices, setIsGeneratingServices] = useState(false);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
-    category: VendorCategory.VENUES,
     location: AVAILABLE_LOCATIONS[0],
     description: '',
     email: '',
+    password: '',
+    passwordConfirm: '',
     phone: '',
     website: '',
     imageUrl: 'https://images.unsplash.com/photo-1519222970733-f546218fa6d7?auto=format&fit=crop&q=80&w=800',
@@ -81,12 +84,11 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
     }
   });
 
-  const [services, setServices] = useState<Service[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,31 +106,9 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
     }
   };
 
-  const handleServiceImageUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsProcessingImages(true);
-      try {
-        const filesArray = Array.from(e.target.files);
-        const filesToProcess = filesArray.slice(0, 5);
-        const compressedImages = await Promise.all(
-          filesToProcess.map(file => compressImage(file, 600, 600, 0.4))
-        );
-        const s = [...services];
-        if (!s[idx].imageUrls) s[idx].imageUrls = [];
-        s[idx].imageUrls = [...(s[idx].imageUrls || []), ...compressedImages].slice(0, 5);
-        setServices(s);
-      } catch (err) {
-        console.error("Service image processing failed", err);
-      } finally {
-        setIsProcessingImages(false);
-      }
-    }
-  };
-
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setIsProcessingImages(true);
-      // FIX: Cast Array.from result to File[] to ensure correct type for compressImage
       const files = Array.from(e.target.files) as File[];
       const compressedImages: string[] = [];
       
@@ -158,16 +138,16 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
     if (!formData.name.trim()) { setSubmitError("Business Name is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.email.trim()) { setSubmitError("Email Address is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.phone.trim()) { setSubmitError("Phone Number is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
-    if (!formData.category) { setSubmitError("Category is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.location.trim()) { setSubmitError("Main Region is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.description.trim()) { setSubmitError("Business Story is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
+    if (formData.password !== formData.passwordConfirm) { setSubmitError("Passwords do not match."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.imageUrl) { setSubmitError("Cover Image is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (galleryImages.length === 0) { setSubmitError("At least 1 Gallery Image is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
+    
     if (!formData.website?.trim() && !formData.socials?.instagram?.trim() && !formData.socials?.facebook?.trim() && !formData.socials?.tiktok?.trim()) { 
       setSubmitError("At least 1 Social Link (Website, Instagram, Facebook, or TikTok) is required."); 
       window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; 
     }
-    if (services.length === 0) { setSubmitError("At least 1 Offered Service is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
 
     // Phone validation
     const phoneDigits = formData.phone.replace(/\D/g, '');
@@ -179,50 +159,55 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
     }
 
     try {
-      const emailExists = await api.checkEmailExists(formData.email);
-      if (emailExists) {
-        setSubmitError("An account or application with this email address already exists. Please use a different email or log in.");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setIsSubmitting(false);
-        return;
+      // 1. Sign Up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      console.log({ authData, authError });
+
+      if (authError) {
+        console.error("Supabase sign up error:", authError);
+        throw authError;
       }
+      if (!authData.user) throw new Error("Sign up failed.");
 
       const newVendor: Vendor = {
-        ...formData,
-        id: `app-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        userId: `pending-${Date.now()}`,
-        status: VendorStatus.PENDING,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        website: formData.website,
+        id: crypto.randomUUID(), // App-generated ID
+        userId: authData.user.id, // Auth user ID
+        auth_id: authData.user.id, // Explicitly pass auth_id
+        status: VendorStatus.NOT_VERIFIED,
         joinedAt: new Date().getFullYear().toString(),
-        services: services,
-        imageUrls: galleryImages,
+        services: [], 
+        applicationStory: formData.description,
+        applicationLocation: formData.location,
+        applicationImageUrl: formData.imageUrl,
+        applicationGalleryUrls: galleryImages,
         rating: 0,
+        socials: formData.socials
       };
-      
+
       await onJoin(newVendor);
       
-      // Send notification email
+      // Send notification email to admin
       try {
         await emailjs.send(
           EMAILJS_SERVICE_ID,
           EMAILJS_JOIN_TEMPLATE_ID,
           {
-            vendor_name: newVendor.name
-          },
-          EMAILJS_PUBLIC_KEY
-        );
-
-        // Send acknowledgment email to the vendor
-        await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_JOIN_ACK_TEMPLATE_ID,
-          {
-            user_email: newVendor.email,
-            vendor_name: newVendor.name
+            vendor_name: newVendor.name,
+            vendor_email: newVendor.email,
+            vendor_phone: newVendor.phone
           },
           EMAILJS_PUBLIC_KEY
         );
       } catch (emailErr) {
-        console.error("Failed to send join notification or acknowledgment email:", emailErr);
+        console.error("Failed to send join notification email to admin:", emailErr);
         // We don't want to block the success UI if just the email fails
       }
 
@@ -317,14 +302,22 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
                 <input required type="email" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
-                <input type="tel" placeholder="+46 70 123 45 67" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input required type="password" placeholder="Create a secure password" className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('search.category')}</label>
-                <select className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value as VendorCategory })}>
-                  {Object.values(VendorCategory).map(c => <option key={c} value={c}>{t(`categories.${c}`)}</option>)}
-                </select>
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input required type="password" placeholder="Confirm your password" className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.passwordConfirm} onChange={e => setFormData({ ...formData, passwordConfirm: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
+                <input type="tel" placeholder="+46 70 123 45 67" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '') })} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('vendorDashboard.mainRegion')}</label>
@@ -339,7 +332,7 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
                 <button type="button" onClick={async () => {
                   if (!formData.description) return;
                   setIsOptimizing(true);
-                  const opt = await optimizeVendorDescription(formData.name, formData.category, formData.description);
+                  const opt = await optimizeVendorDescription(formData.name, VendorCategory.OTHER, formData.description);
                   setFormData(prev => ({ ...prev, description: opt }));
                   setIsOptimizing(false);
                 }} disabled={isOptimizing || !formData.description} className="text-[10px] font-bold text-sky-600 uppercase flex items-center gap-1 hover:text-sky-700 transition-colors">
@@ -427,76 +420,6 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
                   <input className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" placeholder="https://facebook.com/yourbusiness" value={formData.socials.facebook} onChange={e => setFormData({ ...formData, socials: { ...formData.socials, facebook: e.target.value } })} />
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Services */}
-          <div className="bg-white p-8 border border-slate-200 rounded-3xl space-y-8 shadow-sm">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-              <h2 className="text-xl serif">{t('vendorDashboard.offeredServices')}</h2>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setServices([...services, { id: Date.now().toString(), name: '', description: '', price: 0 }])} className="bg-slate-50 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-2">
-                  <Plus className="w-3 h-3" /> {t('vendorDashboard.addService')}
-                </button>
-                <button type="button" onClick={async () => {
-                  setIsGeneratingServices(true);
-                  const ideas = await generateServiceIdeas(formData.category);
-                  const newServices = ideas.map(idea => ({ id: Math.random().toString(), name: idea, description: 'Exclusive value package.', price: 4900 }));
-                  setServices([...services, ...newServices]);
-                  setIsGeneratingServices(false);
-                }} disabled={isGeneratingServices} className="bg-sky-50 text-sky-600 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-100 transition-all disabled:opacity-50 flex items-center gap-2">
-                  {isGeneratingServices ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} 
-                  {t('vendorDashboard.generateIdeas')}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {services.map((service, idx) => (
-                <div key={service.id} className="relative p-6 bg-slate-50 rounded-2xl space-y-4 group/item">
-                  <button type="button" onClick={() => setServices(services.filter(s => s.id !== service.id))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="flex flex-col gap-4">
-                    {service.imageUrls && service.imageUrls.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {service.imageUrls.map((url, imgIdx) => (
-                          <div key={imgIdx} className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 border border-slate-200">
-                            <img src={url} className="w-full h-full object-cover" alt="Service" />
-                            <button type="button" onClick={() => {
-                              const s = [...services]; 
-                              s[idx].imageUrls = s[idx].imageUrls?.filter((_, i) => i !== imgIdx); 
-                              setServices(s);
-                            }} className="absolute top-1 right-1 p-1 bg-white text-red-500 rounded-full shadow-lg">
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex-grow space-y-4">
-                      <input placeholder="Service Title (e.g. Budget Wedding Package)" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-1 focus:ring-sky-500" value={service.name} onChange={e => {
-                        const s = [...services]; s[idx].name = e.target.value; setServices(s);
-                      }} />
-                      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                        <div className="relative w-full sm:w-32 flex-shrink-0">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">SEK</span>
-                          <input type="number" className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-sm font-bold outline-none focus:ring-1 focus:ring-sky-500" value={service.price} onChange={e => {
-                            const s = [...services]; s[idx].price = Number(e.target.value); setServices(s);
-                          }} />
-                        </div>
-                        <input placeholder="Short description..." className="flex-grow w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={service.description} onChange={e => {
-                          const s = [...services]; s[idx].description = e.target.value; setServices(s);
-                        }} />
-                        <label className="flex-shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 border border-slate-200">
-                          <Camera className="w-4 h-4" /> Add Photo
-                          <input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleServiceImageUpload(idx, e)} />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
 

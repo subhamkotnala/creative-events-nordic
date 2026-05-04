@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile, Session } from '../types';
+import { UserProfile } from '../types';
 import { api } from '../services/api';
+import { supabase } from '../supabaseClient';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -19,9 +20,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       await api.init();
-      const session = await api.getCurrentSession();
+      // Use Supabase Auth getSession/onAuthStateChange instead of api.getCurrentSession
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        setUser(session.user);
+        let { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', session.user.email)
+            .single();
+
+        if (!profile) {
+            const { data: profileByAuthId } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('auth_id', session.user.id)
+                .single();
+            profile = profileByAuthId;
+        }
+
+        if (!profile) {
+            const { data: profileById } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+            profile = profileById;
+        }
+
+        if (profile) {
+            setUser({
+                id: profile.id,
+                email: profile.email,
+                name: profile.business_name || profile.email,
+                role: profile.role,
+                favorites: [],
+                createdAt: profile.joined_at,
+                avatarUrl: profile.application_image_url || profile.services?.[0]?.imageUrl || ''
+            });
+        }
       }
       setIsInitializing(false);
     };
@@ -29,21 +65,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password?: string) => {
-    // Note: We do not set global isLoading here to prevent the entire App from re-rendering/unmounting 
-    // during login, which would clear local error states in the Login component.
     try {
-      const session = await api.login(email, password);
-      setUser(session.user);
-      return session.user;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || '' });
+      if (error) throw error;
+      
+      if (!data.user) {
+        throw new Error("Login succeeded but user data was not returned. Please ensure your email is confirmed.");
+      }
+
+      let { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', data.user.email)
+          .single();
+          
+      if (!profile) {
+          const { data: profileByAuthId } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('auth_id', data.user.id)
+              .single();
+          profile = profileByAuthId;
+      }
+      
+      if (!profile) {
+          const { data: profileById } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', data.user.id)
+              .single();
+          profile = profileById;
+      }
+      
+      if (!profile) {
+          throw new Error("User found in auth, but no associated profile found. Please register or contact support.");
+      }
+      
+      const userProfile: UserProfile = {
+          id: profile.id,
+          email: profile.email,
+          name: profile.business_name || profile.email,
+          role: profile.role,
+          favorites: [],
+          createdAt: profile.joined_at,
+          avatarUrl: profile.application_image_url || profile.services?.[0]?.imageUrl || ''
+      };
+
+      setUser(userProfile);
+      return userProfile;
     } catch (error) {
       throw error;
     } 
   };
   
   const logout = async () => {
-    await api.logout();
+    await supabase.auth.signOut();
     setUser(null);
   };
+
 
   const updateUser = async (updatedUser: UserProfile) => {
     await api.updateProfile(updatedUser);

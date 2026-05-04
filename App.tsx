@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Vendor, VendorStatus } from './types';
-import { INITIAL_VENDORS } from './constants';
 import Home from './pages/Home';
 import Explore from './pages/Explore';
+import OurVendors from './pages/OurVendors';
 import VendorDashboard from './pages/VendorDashboard';
+import VendorProfile from './pages/VendorProfile';
 import JoinMarketplace from './pages/JoinMarketplace';
 import AdminDashboard from './pages/AdminDashboard';
 import VendorDetail from './pages/VendorDetail';
+import ServiceDetail from './pages/ServiceDetail';
+import VendorReview from './pages/VendorReview';
 import VendorMockup from './pages/VendorMockup';
 import RegisterVendor from './pages/RegisterVendor';
 import Login from './pages/Login';
@@ -34,6 +37,7 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const PrivateRoute: React.FC<{ children: React.ReactNode, roles?: string[] }> = ({ children, roles }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  const [initialLocation] = useState(location.pathname);
 
   if (isLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -42,8 +46,14 @@ const PrivateRoute: React.FC<{ children: React.ReactNode, roles?: string[] }> = 
     </div>
   );
 
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  if (!user) {
+    if (location.pathname === '/login') return null;
+    return <Navigate to="/login" state={{ from: initialLocation }} replace />;
+  }
+  if (roles && !roles.includes(user.role)) {
+    if (location.pathname === '/') return null;
+    return <Navigate to="/" replace />;
+  }
 
   return <>{children}</>;
 };
@@ -83,19 +93,7 @@ const AppContent: React.FC = () => {
       try {
         await api.init();
         const data = await api.getVendors();
-        
-        // Auto-seed data if database is empty
-        if (data.length === 0) {
-          console.log("Database empty. Seeding initial vendors...");
-          for (const v of INITIAL_VENDORS) {
-            await api.saveVendor(v);
-          }
-          // Fetch again after seeding
-          const seededData = await api.getVendors();
-          setVendors(seededData);
-        } else {
-          setVendors(data);
-        }
+        setVendors(data);
       } catch (error) {
         console.error("Failed to load vendors:", error);
       } finally {
@@ -110,9 +108,9 @@ const AppContent: React.FC = () => {
     setVendors(data);
   };
 
-  const updateStatus = async (id: string, status: VendorStatus, password?: string) => {
+  const updateStatus = async (id: string, status: VendorStatus) => {
     // Return the credentials result so AdminDashboard can use it
-    const result = await api.updateVendorStatus(id, status, password);
+    const result = await api.updateVendorStatus(id, status);
     await refreshVendors();
     return result;
   };
@@ -203,6 +201,7 @@ const AppContent: React.FC = () => {
 
           <div className="flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 pt-1 order-3 md:order-2 w-full md:w-auto mt-1 md:mt-0 md:mr-auto md:ml-8">
             <Link to="/explore" className="hover:text-sky-600 transition-colors">Marketplace</Link>
+            <Link to="/vendors" className="hover:text-sky-600 transition-colors">Our Vendors</Link>
             {user?.role !== 'VENDOR' && (
               <Link to="/join" className="hover:text-sky-600 transition-colors">Join Marketplace</Link>
             )}
@@ -230,22 +229,40 @@ const AppContent: React.FC = () => {
                     </div>
                     <div className="px-2 space-y-1">
                       {user.role === 'ADMIN' && (
-                        <Link 
-                          to="/admin" 
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className={getMenuLinkClass('/admin')}
-                        >
-                          <ShieldCheck className="w-4 h-4" /> Admin Panel
-                        </Link>
+                        <>
+                          <Link 
+                            to="/admin" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/admin')}
+                          >
+                            <ShieldCheck className="w-4 h-4" /> Admin Panel
+                          </Link>
+                          <Link 
+                            to="/vendor-review" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/vendor-review')}
+                          >
+                            <Clock className="w-4 h-4" /> Vendor Review
+                          </Link>
+                        </>
                       )}
                       {user.role === 'VENDOR' && (
-                        <Link 
-                          to="/dashboard" 
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className={getMenuLinkClass('/dashboard')}
-                        >
-                          <ShoppingBag className="w-4 h-4" /> Vendor Dashboard
-                        </Link>
+                        <>
+                          <Link 
+                            to="/dashboard" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/dashboard')}
+                          >
+                            <ShoppingBag className="w-4 h-4" /> Dashboard
+                          </Link>
+                          <Link 
+                            to="/profile" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/profile')}
+                          >
+                            <Settings className="w-4 h-4" /> Profile
+                          </Link>
+                        </>
                       )}
                       <Link 
                         to="/change-password" 
@@ -273,12 +290,16 @@ const AppContent: React.FC = () => {
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageTransition><Home vendors={vendors} /></PageTransition>} />
             <Route path="/explore" element={<PageTransition><Explore vendors={vendors.filter(v => v.status === VendorStatus.APPROVED)} /></PageTransition>} />
+            <Route path="/vendors" element={<PageTransition><OurVendors vendors={vendors.filter(v => v.status === VendorStatus.APPROVED)} /></PageTransition>} />
             <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
             <Route path="/vendors/:id" element={<PageTransition><VendorDetail vendors={vendors} /></PageTransition>} />
+            <Route path="/services/:vendorId/:serviceId" element={<PageTransition><ServiceDetail vendors={vendors} /></PageTransition>} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorDashboard vendors={vendors} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
+            <Route path="/profile" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorProfile vendors={vendors} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
             <Route path="/admin" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminDashboard vendors={vendors} onUpdateStatus={updateStatus} onToggleFeature={toggleFeature} onDeleteVendor={deleteVendor} onUpdateVendor={addVendor} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
+            <Route path="/vendor-review" element={<PageTransition><PrivateRoute roles={['ADMIN']}><VendorReview vendors={vendors} onUpdateStatus={updateStatus} /></PrivateRoute></PageTransition>} />
             
             {/* New Change Password Route (Accessible to authenticated users) */}
             <Route path="/change-password" element={<PageTransition><PrivateRoute><ChangePassword /></PrivateRoute></PageTransition>} />
@@ -297,7 +318,7 @@ const AppContent: React.FC = () => {
             />
             <Route path="/vendors/new" element={<Navigate to="/join" replace />} />
             
-            <Route path="/register/:id" element={<PageTransition><RegisterVendor vendors={vendors} onUpdateVendor={addVendor} /></PageTransition>} />
+            <Route path="/register/:id" element={<PageTransition><RegisterVendor /></PageTransition>} />
           </Routes>
         </AnimatePresence>
       </main>

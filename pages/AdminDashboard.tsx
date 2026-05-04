@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Vendor, VendorStatus, VendorCategory, Service } from '../types';
+import { Vendor, VendorStatus, VendorCategory, VendorService } from '../types';
 import { analyzeVendorApplication, getMarketInsights } from '../services/geminiService';
+import { api } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import emailjs from '@emailjs/browser';
 import { AVAILABLE_LOCATIONS } from '../constants';
@@ -11,7 +12,7 @@ import {
   TrendingUp, MoreVertical, MapPin, Mail, Calendar, 
   ArrowUpRight, Download, ChevronRight, Activity, Sparkles, Shield,
   Zap, BarChart3, History, Terminal, Star, Send, Globe, Instagram, Music, Facebook, Tag, Image as ImageIcon,
-  Edit, Trash2, PlusCircle, Save, UploadCloud, Camera, Loader2, ExternalLink, Plus
+  Edit, Trash2, PlusCircle, Save, UploadCloud, Camera, Loader2, ExternalLink, Plus, AlertCircle
 } from 'lucide-react';
 
 // EmailJS Configuration
@@ -57,7 +58,7 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
 
 interface AdminDashboardProps {
   vendors: Vendor[];
-  onUpdateStatus: (id: string, status: VendorStatus, password?: string) => Promise<any>;
+  onUpdateStatus: (id: string, status: VendorStatus) => Promise<any>;
   onToggleFeature: (id: string) => void;
   onDeleteVendor: (id: string) => void;
   onUpdateVendor: (v: Vendor) => void;
@@ -83,7 +84,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<{title: string, message: string} | null>(null);
   const [isApproving, setIsApproving] = useState(false); // Loader state for approval
-  
+  const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   // Custom Confirmation State to replace window.confirm
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -112,12 +115,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       action: async () => {
         setIsApproving(true); // Start Loader
 
-        // 1. Password Generation: Create a random 6-character password
-        const generatedPassword = Math.random().toString(36).slice(-6);
-
         // 2. Email First: Send email using EmailJS
         try {
-            // Note: Sending parameters: business_name, email, generated_password as requested
+            // Note: Sending parameters: business_name, email as requested
             await emailjs.send(
                 EMAILJS_SERVICE_ID,
                 EMAILJS_TEMPLATE_ID,
@@ -125,14 +125,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     business_name: v.name,
                     to_email: v.email, 
                     email: v.email,
-                    generated_password: generatedPassword, // Updated to match template variable
                     to_name: v.name,
                 },
                 EMAILJS_PUBLIC_KEY
             );
 
             // 3. Database Second: Wait for email success, then move record
-            await onUpdateStatus(v.id, VendorStatus.APPROVED, generatedPassword);
+            await onUpdateStatus(v.id, VendorStatus.APPROVED);
 
             setNotifications(prev => [`System: Approved & Email sent to ${v.name}`, ...prev]);
             setActionSuccess({
@@ -177,13 +176,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleOpenNew = () => {
     setEditingVendor({
       name: '',
-      category: VendorCategory.OTHER,
-      location: AVAILABLE_LOCATIONS[0],
-      description: '',
       email: '',
       phone: '',
-      imageUrl: 'https://images.unsplash.com/photo-1519222970733-f546218fa6d7?auto=format&fit=crop&q=80&w=800',
-      imageUrls: [],
       status: VendorStatus.PENDING,
       services: [],
       rating: 4.5,
@@ -198,50 +192,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && editingVendor) {
-      setIsProcessingImage(true);
-      try {
-        const compressed = await compressImage(e.target.files[0], 1200, 800, 0.6);
-        setEditingVendor({ ...editingVendor, imageUrl: compressed });
-      } catch (err) {
-        console.error("Image processing failed", err);
-      } finally {
-        setIsProcessingImage(false);
-      }
-    }
+    // Admin image upload disabled. Vendors manage this in their own dashboard
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && editingVendor) {
-      setIsProcessingImage(true);
-      const files = Array.from(e.target.files) as File[];
-      const compressedImages: string[] = [];
-      
-      for (const file of files) {
-        try {
-          const compressed = await compressImage(file, 800, 800, 0.5);
-          compressedImages.push(compressed);
-        } catch (err) {
-          console.error("Gallery upload failed", err);
-        }
-      }
-      
-      setEditingVendor({
-        ...editingVendor,
-        imageUrls: [...(editingVendor.imageUrls || []), ...compressedImages].slice(0, 8)
-      });
-      setIsProcessingImage(false);
-    }
+    // Admin gallery upload disabled. Vendors manage this in their own dashboard
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (vendor: Vendor) => {
     setConfirmAction({
       title: 'Delete Partner',
-      message: 'Are you sure you want to delete this partner? This action cannot be undone.',
-      action: () => {
-        onDeleteVendor(id);
-        setNotifications(prev => [`System: Deleted partner record`, ...prev]);
-        setConfirmAction(null);
+      message: `Are you sure you want to delete ${vendor.name}? This will delete the user from system i.e., he cannot login anymore and cannot be undone.`,
+      action: async () => {
+        try {
+            if (vendor.auth_id) {
+                await api.deleteUser(vendor.auth_id);
+            }
+            onDeleteVendor(vendor.auth_id || vendor.id);
+            setNotifications(prev => [`System: Deleted partner record`, ...prev]);
+            setConfirmAction(null);
+        } catch (err) {
+            console.error("Delete failed:", err);
+            alert("Delete failed: " + (err instanceof Error ? err.message : String(err)));
+        }
       }
     });
   };
@@ -295,6 +268,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       [VendorStatus.APPROVED]: { text: 'Approved', bg: 'bg-green-50', textCol: 'text-green-700', icon: CheckCircle2 },
       [VendorStatus.PENDING]: { text: 'Pending', bg: 'bg-amber-50', textCol: 'text-amber-700', icon: Clock },
       [VendorStatus.REJECTED]: { text: 'Rejected', bg: 'bg-red-50', textCol: 'text-red-700', icon: XCircle },
+      [VendorStatus.NOT_VERIFIED]: { text: 'Not Verified', bg: 'bg-slate-50', textCol: 'text-slate-700', icon: AlertCircle },
+      [VendorStatus.VERIFIED]: { text: 'Verified', bg: 'bg-blue-50', textCol: 'text-blue-700', icon: CheckCircle2 },
     };
     const config = configs[status];
     const Icon = config.icon;
@@ -307,10 +282,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const filteredDirectory = useMemo(() => {
-    return vendors.filter(v => v.status !== VendorStatus.PENDING && (
-      v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.location.toLowerCase().includes(searchTerm.toLowerCase())
+    return vendors.filter(v => (
+      (v.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (v.services?.some(s => (s.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())) || false) ||
+      (v.services?.some(s => (s.location?.toLowerCase() || '').includes(searchTerm.toLowerCase())) || false)
     ));
   }, [vendors, searchTerm]);
 
@@ -347,108 +322,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Left Column: Review Queue & Directory */}
           <div className="lg:col-span-2 space-y-12">
-            <section className="space-y-6">
-              <h2 className="text-2xl serif px-2">{t('admin.queueTitle')}</h2>
-              {vendors.filter(v => v.status === VendorStatus.PENDING).map(v => (
-                <div key={v.id} className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 flex flex-col gap-10 shadow-sm transition-all hover:shadow-md">
-                  <div className="flex flex-col md:flex-row gap-10">
-                    <div className="w-full md:w-64 aspect-square flex-shrink-0">
-                      <img src={v.imageUrl} className="w-full h-full object-cover rounded-2xl shadow-sm border border-slate-100" alt="" />
-                    </div>
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-start mb-4">
-                          <div>
-                              <span className="text-[10px] uppercase font-bold text-sky-600 mb-1 block tracking-widest">{t(`categories.${v.category}`)}</span>
-                              <h3 className="text-3xl serif">{v.name}</h3>
-                          </div>
-                          <div className="flex flex-col items-end gap-2 text-right">
-                            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold tracking-widest uppercase">
-                                <MapPin className="w-3 h-3" /> {v.location}
-                            </div>
-                            {/* Social Links in Review */}
-                            <div className="flex gap-3 mt-2">
-                                {v.socials?.instagram && <a href={v.socials.instagram} target="_blank" rel="noopener noreferrer" title="Instagram"><Instagram className="w-4 h-4 text-pink-500" /></a>}
-                                {v.socials?.facebook && <a href={v.socials.facebook} target="_blank" rel="noopener noreferrer" title="Facebook"><Facebook className="w-4 h-4 text-blue-600" /></a>}
-                                {v.socials?.tiktok && <a href={v.socials.tiktok} target="_blank" rel="noopener noreferrer" title="TikTok"><Music className="w-4 h-4 text-slate-800" /></a>}
-                                {v.website && <a href={v.website} target="_blank" rel="noopener noreferrer" title="Website"><Globe className="w-4 h-4 text-sky-600" /></a>}
-                            </div>
-                          </div>
-                      </div>
-                      <p className="text-slate-500 text-sm mb-6 font-light leading-relaxed line-clamp-3">{v.description}</p>
-                      <div className="flex gap-2">
-                        <span className="px-3 py-1 bg-slate-50 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100">{v.email}</span>
-                        {v.phone && <span className="px-3 py-1 bg-slate-50 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100">{v.phone}</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Portfolio Gallery Display in Review */}
-                  {v.imageUrls && v.imageUrls.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-2">Uploaded Portfolio</h4>
-                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-                        {v.imageUrls.map((url, i) => (
-                          <div key={i} className="aspect-square rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
-                            <img src={url} className="w-full h-full object-cover" alt="" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Services Manifest Display in Review */}
-                  <div className="bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 px-2">Service Manifest</h4>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      {v.services && v.services.length > 0 ? (
-                        v.services.map(s => (
-                          <div key={s.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-3">
-                            {s.imageUrls && s.imageUrls.length > 0 && (
-                              <div className="flex gap-2 overflow-x-auto pb-2">
-                                {s.imageUrls.map((url, i) => (
-                                  <div key={i} className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                                    <img src={url} className="w-full h-full object-cover" alt={s.name} />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            <div className="flex-grow">
-                              <div className="flex justify-between items-start mb-1">
-                                <h5 className="text-xs font-semibold">{s.name}</h5>
-                                <span className="text-[9px] font-bold text-sky-600">{s.price.toLocaleString()} SEK</span>
-                              </div>
-                              <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">{s.description}</p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-slate-400 italic px-2">No services listed.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-50">
-                      <button 
-                          onClick={() => handleApprove(v)} 
-                          className="bg-slate-900 text-white px-10 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-sky-600 transition-all flex items-center gap-2"
-                      >
-                          <Send className="w-4 h-4" /> {t('admin.approveAndNotify')}
-                      </button>
-                      <button 
-                          onClick={() => handleDecline(v)}
-                          className="px-8 py-4 border border-slate-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all"
-                      >
-                          Decline
-                      </button>
-                  </div>
-                </div>
-              ))}
-              {vendors.filter(v => v.status === VendorStatus.PENDING).length === 0 && (
-                <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[3rem]">
-                    <p className="text-slate-400 italic serif text-xl">Review queue is empty.</p>
-                </div>
-              )}
-            </section>
 
             <section className="space-y-6">
               <div className="flex justify-between items-center px-2">
@@ -479,20 +352,64 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <tr key={vendor.id} className="hover:bg-slate-50 transition-colors group">
                         <td className="px-8 py-6">
                           <p className="font-semibold text-sm text-slate-900">{vendor.name}</p>
-                          <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">{vendor.category}</p>
+                          <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">{vendor.services?.[0]?.category || 'Partner'}</p>
                         </td>
-                        <td className="px-8 py-6 text-sm text-slate-500 font-light">{vendor.location}</td>
+                        <td className="px-8 py-6 text-sm text-slate-500 font-light">{vendor.applicationLocation || vendor.services?.[0]?.location}</td>
                         <td className="px-8 py-6"><StatusBadge status={vendor.status} /></td>
                         <td className="px-8 py-6">
                           <div className="flex justify-end gap-2">
                             {/* Star Action: Toggle Featured */}
-                            <button 
-                              onClick={() => onToggleFeature(vendor.id)} 
-                              className={`p-2 rounded-xl transition-all ${vendor.isFeatured ? 'text-amber-500 bg-amber-50 shadow-inner' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'}`}
-                              title={vendor.isFeatured ? 'Unfeature from home page' : 'Feature on home page'}
-                            >
-                              <Star className={`w-4 h-4 ${vendor.isFeatured ? 'fill-amber-500' : ''}`} />
-                            </button>
+                            {vendor.status === VendorStatus.APPROVED && (
+                              <button 
+                                onClick={() => onToggleFeature(vendor.id)} 
+                                className={`p-2 rounded-xl transition-all ${vendor.isFeatured ? 'text-amber-500 bg-amber-50 shadow-inner' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'}`}
+                                title={vendor.isFeatured ? 'Unfeature from home page' : 'Feature on home page'}
+                              >
+                                <Star className={`w-4 h-4 ${vendor.isFeatured ? 'fill-amber-500' : ''}`} />
+                              </button>
+                            )}
+                            {vendor.status === VendorStatus.APPROVED && (
+                              <Link 
+                                to={`/vendors/${vendor.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-slate-300 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
+                                title="View Public Profile"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Link>
+                            )}
+
+                            {(vendor.status === VendorStatus.VERIFIED || vendor.status === VendorStatus.PENDING) && (
+                              <button 
+                                onClick={() => handleApprove(vendor)}
+                                className="p-2 text-slate-300 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                                title="Approve Application"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {vendor.status === VendorStatus.NOT_VERIFIED && (
+                              <button 
+                                disabled
+                                className="p-2 text-slate-200 cursor-not-allowed"
+                                title="Awaiting Email Verification"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {(vendor.status === VendorStatus.VERIFIED || vendor.status === VendorStatus.PENDING || vendor.status === VendorStatus.NOT_VERIFIED) && (
+                              <button 
+                                onClick={() => handleDecline(vendor)}
+                                className="p-2 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                                title="Decline Application"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            )}
+
                             <button 
                               onClick={() => handleOpenEdit(vendor)}
                               className="p-2 text-slate-300 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
@@ -501,7 +418,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => handleDelete(vendor.id)}
+                              onClick={() => handleDelete(vendor)}
                               className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                               title="Delete Partner"
                             >
@@ -531,7 +448,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 space-y-3">
                     {notifications.length > 0 ? (
                         notifications.map((note, i) => (
-                            <div key={i} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 py-2 border-b border-white/5 last:border-none flex gap-2">
+                            <div key={`${note}-${i}`} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 py-2 border-b border-white/5 last:border-none flex gap-2">
                                 <span className="text-sky-500">→</span> {note}
                             </div>
                         ))
@@ -560,15 +477,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex-grow overflow-y-auto p-10 space-y-12 custom-scrollbar">
                 {/* Header Branding */}
                 <div className="space-y-4">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Header Branding Photo</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Header Branding Photo (Managed by Vendor)</label>
                   <div className="relative w-full aspect-[21/9] bg-slate-100 rounded-3xl overflow-hidden group border border-slate-100 shadow-inner">
-                    <img src={editingVendor.imageUrl} className="w-full h-full object-cover" alt="" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                      <button type="button" onClick={() => fileInputRef.current?.click()} className="p-4 bg-white rounded-full text-slate-900 shadow-2xl">
-                        {isProcessingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-                      </button>
-                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-                    </div>
+                    <img src={editingVendor.services?.[0]?.imageUrl} className="w-full h-full object-cover" alt="" />
                   </div>
                 </div>
 
@@ -584,25 +495,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
-                    <input className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={editingVendor.phone || ''} onChange={e => setEditingVendor({...editingVendor, phone: e.target.value})} />
+                    <input type="tel" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={editingVendor.phone || ''} onChange={e => setEditingVendor({...editingVendor, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})} />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Vendor Category</label>
-                    <select className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none cursor-pointer" value={editingVendor.category} onChange={e => setEditingVendor({...editingVendor, category: e.target.value as VendorCategory})}>
-                      {Object.values(VendorCategory).map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Primary Region</label>
-                    <select className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none cursor-pointer" value={editingVendor.location} onChange={e => setEditingVendor({...editingVendor, location: e.target.value})}>
-                      {AVAILABLE_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Business Description</label>
-                  <textarea rows={4} className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none resize-none focus:ring-1 focus:ring-sky-500" value={editingVendor.description} onChange={e => setEditingVendor({...editingVendor, description: e.target.value})} />
                 </div>
 
                 {/* SOCIAL LINKS (MANDATORY) */}
@@ -624,55 +518,76 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* PHOTO GALLERY (MANDATORY) */}
+                {/* PHOTO GALLERY (MANAGED BY VENDOR) */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Portfolio Gallery</h4>
-                    <button type="button" onClick={() => galleryInputRef.current?.click()} className="text-[10px] font-bold text-sky-600 uppercase flex items-center gap-2"><Plus className="w-3 h-3" /> Add Images</button>
+                    <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Portfolio Gallery (Managed by Vendor)</h4>
+                    <span className="text-[9px] text-slate-300 italic">Click to expand</span>
                   </div>
                   <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4">
-                    {editingVendor.imageUrls?.map((url, i) => (
-                      <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group">
-                        <img src={url} className="w-full h-full object-cover" alt="" />
-                        <button onClick={() => setEditingVendor({...editingVendor, imageUrls: editingVendor.imageUrls?.filter((_, idx) => idx !== i)})} className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <X className="w-3 h-3" />
-                        </button>
+                    {(editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls)?.map((url, i) => (
+                      <div 
+                        key={i} 
+                        onClick={() => {
+                          setActiveGallery({ images: (editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls) || [], initialIndex: i });
+                          setCurrentImageIndex(i);
+                        }}
+                        className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group cursor-pointer hover:ring-2 hover:ring-sky-500/30 transition-all"
+                      >
+                        <img src={url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
                       </div>
                     ))}
-                    <input type="file" ref={galleryInputRef} multiple className="hidden" accept="image/*" onChange={handleGalleryUpload} />
                   </div>
                 </div>
 
-                {/* SERVICES MANIFEST (MANDATORY) */}
+                {/* SERVICES MANIFEST (READ ONLY IN ADMIN) */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Service Manifest</h4>
-                    <button onClick={() => setEditingVendor({...editingVendor, services: [...(editingVendor.services || []), { id: Date.now().toString(), name: '', description: '', price: 0 }]})} className="text-[10px] font-bold text-sky-600 uppercase flex items-center gap-2"><Plus className="w-3 h-3" /> Add Service</button>
+                    <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Service Offerings</h4>
                   </div>
-                  <div className="space-y-4">
-                     {editingVendor.services?.map((s, idx) => (
-                       <div key={s.id} className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 relative">
-                          <div className="flex-grow grid md:grid-cols-3 gap-4">
-                             <input placeholder="Service Name" className="bg-white border-none rounded-xl px-4 py-2 text-xs outline-none" value={s.name} onChange={e => {
-                               const updated = [...(editingVendor.services || [])];
-                               updated[idx].name = e.target.value;
-                               setEditingVendor({...editingVendor, services: updated});
-                             }} />
-                             <input placeholder="Price SEK" type="number" className="bg-white border-none rounded-xl px-4 py-2 text-xs outline-none" value={s.price} onChange={e => {
-                               const updated = [...(editingVendor.services || [])];
-                               updated[idx].price = Number(e.target.value);
-                               setEditingVendor({...editingVendor, services: updated});
-                             }} />
-                             <input placeholder="Quick description" className="bg-white border-none rounded-xl px-4 py-2 text-xs outline-none" value={s.description} onChange={e => {
-                               const updated = [...(editingVendor.services || [])];
-                               updated[idx].description = e.target.value;
-                               setEditingVendor({...editingVendor, services: updated});
-                             }} />
-                          </div>
-                          <button onClick={() => setEditingVendor({...editingVendor, services: editingVendor.services?.filter(serv => serv.id !== s.id)})} className="p-2 text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                       </div>
-                     ))}
-                  </div>
+                  {editingVendor.services && editingVendor.services.length > 0 ? (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {editingVendor.services.map((s, idx) => (
+                        <div key={s.id || idx} className="flex flex-col gap-2 p-5 bg-slate-50 rounded-3xl border border-slate-100 relative">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600">{s.category}</span>
+                              <span className="text-[10px] font-bold text-slate-400">{s.location}</span>
+                            </div>
+                            {s.imageUrls && s.imageUrls.length > 0 && (
+                              <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+                                {s.imageUrls.map((url, i) => (
+                                  <div 
+                                    key={url} 
+                                    onClick={() => {
+                                      setActiveGallery({ images: s.imageUrls || [], initialIndex: i });
+                                      setCurrentImageIndex(i);
+                                    }}
+                                    className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer shadow-sm"
+                                  >
+                                    <img src={url} className="w-full h-full object-cover" alt="" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-3">{s.description}</p>
+                            {s.packages && s.packages.length > 0 && (
+                              <div className="mt-3 space-y-2">
+                                {s.packages.map(pkg => (
+                                  <div key={pkg.id} className="bg-white px-3 py-2 rounded-xl flex justify-between items-center border border-slate-100 shadow-sm">
+                                    <span className="text-[9px] font-bold text-slate-600">{pkg.name}</span>
+                                    <span className="text-[9px] font-bold text-sky-600">{pkg.price} SEK</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-10 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">No categories added yet.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -739,6 +654,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                    </button>
                 </div>
              </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery Modal */}
+      {activeGallery && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/95 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <button 
+            onClick={() => setActiveGallery(null)} 
+            className="absolute top-6 right-6 p-3 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all z-20"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          <div className="relative w-full max-w-6xl flex items-center justify-center h-full">
+            {activeGallery.images.length > 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : activeGallery.images.length - 1));
+                }}
+                className="absolute left-0 p-4 text-white/50 hover:text-white transition-all z-20"
+              >
+                <ChevronRight className="w-10 h-10 rotate-180" />
+              </button>
+            )}
+            
+            <img 
+              src={activeGallery.images[currentImageIndex]} 
+              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-500"
+              alt="Gallery Preview"
+            />
+
+            {activeGallery.images.length > 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex((prev) => (prev < activeGallery.images.length - 1 ? prev + 1 : 0));
+                }}
+                className="absolute right-0 p-4 text-white/50 hover:text-white transition-all z-20"
+              >
+                <ChevronRight className="w-10 h-10" />
+              </button>
+            )}
+          </div>
+          
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 overflow-x-auto px-4 z-20">
+            {activeGallery.images.map((img) => (
+              <button 
+                key={img}
+                onClick={() => setCurrentImageIndex(activeGallery.images.indexOf(img))}
+                className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeGallery.images.indexOf(img) === currentImageIndex ? 'border-sky-500 opacity-100 scale-110 shadow-lg' : 'border-transparent opacity-40 hover:opacity-100'}`}
+              >
+                <img src={img} className="w-full h-full object-cover" alt="" />
+              </button>
+            ))}
           </div>
         </div>
       )}

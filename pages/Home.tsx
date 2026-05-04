@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Star, Shield, Layout, ChevronLeft, ChevronRight, Search, MapPin, Grid, Building2, Camera, Music, UtensilsCrossed, Flower, ClipboardList, Award, HeartHandshake, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VendorCategory, Vendor } from '../types';
@@ -18,6 +18,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedLocation, setSelectedLocation] = useState('All');
   const navigate = useNavigate();
+  const routerLocation = useLocation();
 
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -241,26 +242,29 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredPartners.length > 0 ? (
-              featuredPartners.map(vendor => (
-                <Link key={vendor.id} to={`/vendors/${vendor.id}`} className="bg-white rounded-[2.5rem] overflow-hidden group shadow-sm hover:shadow-xl transition-all border border-slate-100">
+              featuredPartners.map(vendor => {
+                const primaryService = vendor.services?.[0];
+                return (
+                <Link key={vendor.id} to={`/vendors/${vendor.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="bg-white rounded-[2.5rem] overflow-hidden group shadow-sm hover:shadow-xl transition-all border border-slate-100">
                   <div className="aspect-[4/3] overflow-hidden">
                     <img 
-                      src={vendor.imageUrl} 
+                      src={primaryService?.imageUrl || primaryService?.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                       alt={vendor.name}
                     />
                   </div>
                   <div className="p-8">
-                    <p className="text-[10px] uppercase tracking-widest text-sky-600 font-bold mb-2">{t(`categories.${vendor.category}`)}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-sky-600 font-bold mb-2">{primaryService?.category ? t(`categories.${primaryService.category}`) : ''}</p>
                     <h3 className="text-xl serif mb-2 truncate">{vendor.name}</h3>
-                    <p className="text-slate-500 text-sm font-light leading-relaxed mb-6 line-clamp-2">{vendor.description}</p>
+                    <p className="text-slate-500 text-sm font-light leading-relaxed mb-6 line-clamp-2">{primaryService?.description}</p>
                     <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-4 border-t border-slate-50">
-                      <span>{vendor.location}</span>
+                      <span>{vendor.applicationLocation || primaryService?.location}</span>
                       <span className="text-sky-700">Featured</span>
                     </div>
                   </div>
                 </Link>
-              ))
+                );
+              })
             ) : (
               <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
                 <p className="text-slate-400 italic serif text-xl">Our featured selection is updated weekly. Check back soon!</p>
@@ -338,7 +342,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                       <input 
                         type="tel" required
                         value={contactForm.phone}
-                        onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                        onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
                         placeholder="+46 70 123 45 67" 
                       />

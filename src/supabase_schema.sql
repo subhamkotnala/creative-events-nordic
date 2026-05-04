@@ -5,6 +5,7 @@
 create table if not exists profiles (
   id text primary key, 
   email text unique not null,
+  auth_id uuid, -- Link to auth.users
   phone text,
   role text default 'USER', -- 'USER', 'VENDOR', 'ADMIN'
   password text default 'password123', -- Added for simple auth
@@ -20,7 +21,11 @@ create table if not exists profiles (
   is_featured boolean default false,
   socials jsonb default '{}'::jsonb,
   services jsonb default '[]'::jsonb,
-  joined_at timestamptz default now()
+  joined_at timestamptz default now(),
+  application_story text,
+  application_location text,
+  application_image_url text,
+  application_gallery_urls text[]
 );
 
 -- 2. Ensure password and views columns exist (safe update)
@@ -35,14 +40,27 @@ begin
   if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'phone') then
     alter table profiles add column phone text;
   end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'profiles' and column_name = 'application_story') then
+    alter table profiles add column application_story text;
+    alter table profiles add column application_location text;
+    alter table profiles add column application_image_url text;
+    alter table profiles add column application_gallery_urls text[];
+  end if;
   if not exists (select 1 from information_schema.columns where table_name = 'applications' and column_name = 'phone') then
     alter table applications add column phone text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name = 'applications' and column_name = 'application_story') then
+    alter table applications add column application_story text;
+    alter table applications add column application_location text;
+    alter table applications add column application_image_url text;
+    alter table applications add column application_gallery_urls text[];
   end if;
 end $$;
 
 -- 3. Create 'applications' table
 create table if not exists applications (
   id text primary key,
+  auth_id uuid, -- Link to auth.users
   business_name text not null,
   email text not null,
   phone text,
@@ -55,7 +73,11 @@ create table if not exists applications (
   website text,
   socials jsonb default '{}'::jsonb,
   services jsonb default '[]'::jsonb,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  application_story text,
+  application_location text,
+  application_image_url text,
+  application_gallery_urls text[]
 );
 
 -- 4. Enable RLS

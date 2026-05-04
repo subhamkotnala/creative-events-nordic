@@ -1,16 +1,14 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Vendor } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useAuth } from '../contexts/AuthContext';
-import CalendarPicker from '../components/CalendarPicker';
-import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Instagram, Facebook, Send, X, CheckCircle2, Music, Loader2, User, MessageSquare, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
-import { api } from '../services/api';
+import { useParams, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { VendorCategory, Vendor } from '../types';
+import { MapPin, ArrowLeft, Building2, ExternalLink, Mail, Calendar, Send, X, CheckCircle2, User, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../contexts/LanguageContext';
+import emailjs from '@emailjs/browser';
+import CalendarPicker from '../components/CalendarPicker';
+import { api } from '../services/api';
 
-interface VendorDetailProps {
+interface ServiceDetailProps {
   vendors: Vendor[];
 }
 
@@ -20,15 +18,13 @@ const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_INQUIRY_TEMPLATE_ID;
 const EMAILJS_ACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ACK_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
+const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
+  const { vendorId, serviceId } = useParams<{ vendorId: string; serviceId: string }>();
   const { t, language } = useLanguage();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const historyStack: string[] = location.state?.history || ['/explore'];
-  const { id } = useParams();
-  const vendor = vendors.find(v => v.id === id);
-
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inquirySent, setInquirySent] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', message: '' });
@@ -37,7 +33,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryImageLoading, setIsGalleryImageLoading] = useState(true);
-
+  
   useEffect(() => {
     if (activeGallery) {
       setCurrentImageIndex(activeGallery.initialIndex);
@@ -46,14 +42,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   }, [activeGallery]);
   
   const calendarRef = useRef<HTMLDivElement>(null);
-
-  // Increment view count on mount
-  useEffect(() => {
-    if (vendor?.id && vendor.status === 'APPROVED') {
-      api.incrementVendorViews(vendor.id);
-    }
-  }, [vendor?.id, vendor?.status]);
-
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
@@ -65,33 +54,6 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showCalendar]);
-
-  if (!vendor) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-        <h1 className="text-2xl serif mb-4">{t('vendorDetail.notFound')}</h1>
-        <button 
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            const newStack = [...historyStack];
-            const backUrl = newStack.pop();
-            
-            if (backUrl) {
-              navigate(backUrl, { state: { history: newStack } });
-            } else if (window.history.length > 2) {
-              navigate(-1);
-            } else {
-              navigate('/explore');
-            }
-          }} 
-          className="text-slate-500 underline"
-        >
-          {t('vendorDetail.back')}
-        </button>
-      </div>
-    );
-  }
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -108,6 +70,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
     setIsSending(true);
 
     try {
+      if (!vendor) return;
       const templateParams = {
         vendor_name: vendor.name,
         vendor_email: vendor.email,
@@ -162,10 +125,27 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
       year: 'numeric'
     }).format(new Date(dateString));
   };
+  
+  const vendor = vendors.find(v => v.id === vendorId);
+  const service = vendor?.services?.find(s => s.id === serviceId);
+
+  if (!vendor || !service) {
+    return <Navigate to="/explore" replace />;
+  }
+
+  const otherServices = vendor.services.filter(s => s.id !== serviceId);
+
+  // Fallback images if the service doesn't have multiple images
+  const galleryUrls = service.imageUrls && service.imageUrls.length > 0 
+    ? service.imageUrls 
+    : vendor.applicationGalleryUrls && vendor.applicationGalleryUrls.length > 0
+      ? vendor.applicationGalleryUrls
+      : [];
 
   return (
-    <div className="pb-24">
-      {isModalOpen && (
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Inquiry Modal */}
+      {isModalOpen && vendor && service && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)} />
           <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col">
@@ -173,7 +153,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
               
               {/* Header Section */}
               <div className="relative h-32 bg-slate-900 overflow-hidden flex-shrink-0">
-                <img src={vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} className="w-full h-full object-cover opacity-40" alt="" />
+                <img src={service.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} className="w-full h-full object-cover opacity-40" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                 <button 
                   onClick={() => setIsModalOpen(false)} 
@@ -323,7 +303,31 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
           </div>
         </div>
       )}
-      
+
+      {inquirySent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setInquirySent(false)} />
+          <div className="relative w-full max-w-md">
+            <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl relative text-center">
+              <button 
+                onClick={() => setInquirySent(false)} 
+                className="absolute top-6 right-6 p-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-20 h-20 bg-green-400/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle2 className="w-10 h-10 text-green-400" />
+              </div>
+              <h3 className="text-3xl serif mb-4">{t('vendorDetail.inquirySent')}</h3>
+              <p className="text-slate-400 text-sm font-light leading-relaxed mb-10">{t('vendorDetail.inquirySentSub')}</p>
+              <button onClick={() => setInquirySent(false)} className="w-full bg-white text-slate-900 font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-sky-900/40 hover:bg-sky-500 hover:text-white transition-all">
+                  Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
         {activeGallery && (
           <motion.div 
@@ -416,8 +420,14 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
         )}
       </AnimatePresence>
 
-      <div className="h-[65vh] w-full relative overflow-hidden bg-slate-200">
-        <img src={vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} className="w-full h-full object-cover" alt={vendor.name} />
+      {/* Hero Header */}
+      <div className="h-[50vh] w-full relative overflow-hidden bg-slate-900">
+        <img 
+          src={service.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+          className="w-full h-full object-cover opacity-60" 
+          alt={service.category} 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         <button 
           type="button"
           onClick={(e) => {
@@ -433,176 +443,126 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
             } else {
               navigate('/explore');
             }
-          }} 
-          className="absolute top-8 left-8 bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg hover:scale-110 transition-transform"
+          }}
+          className="absolute top-8 left-8 bg-white/20 backdrop-blur-md p-3 rounded-full hover:bg-white text-white hover:text-slate-900 transition-colors z-10" 
+          title="Back"
         >
-          <ArrowLeft className="w-5 h-5 text-slate-900" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
+        <div className="absolute top-8 right-8 z-10">
+            <Link 
+              to={`/vendors/${vendor.id}`}
+              state={{ history: [...historyStack, location.pathname + location.search] }}
+              className="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2 shadow-lg"
+            >
+              <Building2 className="w-4 h-4" /> Provider Profile
+            </Link>
+        </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 -mt-40 relative z-10">
-        <div className="grid lg:grid-cols-3 gap-12">
-          <div className="lg:col-span-2 space-y-12">
-            <div className="bg-white p-12 border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-200/50">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-sky-600 font-bold mb-4 block">
-                {vendor.services?.[0]?.category ? t(`categories.${vendor.services[0].category}`) : ''}
+
+      <div className="max-w-5xl mx-auto px-4 -mt-32 relative z-10">
+        <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-xl shadow-slate-200/50 mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
+            <div className="flex-grow">
+              <span className="text-xs uppercase tracking-[0.2em] text-sky-600 font-bold mb-3 block">
+                {t(`categories.${service.category}`)}
               </span>
-              <h1 className="text-6xl serif mb-6 leading-tight">{vendor.name}</h1>
-              <div className="flex flex-wrap items-center gap-8 text-xs font-bold uppercase tracking-widest text-slate-400 mb-10">
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><MapPin className="w-4 h-4 text-sky-500" /> {vendor.applicationLocation || vendor.services?.[0]?.location}</span>
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><Calendar className="w-4 h-4 text-sky-500" /> Member since {vendor.joinedAt.split('-')[0]}</span>
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><MessageSquare className="w-4 h-4 text-sky-500" /> {vendor.inquiries || 0} Inquiries</span>
+              <h1 className="text-4xl md:text-5xl serif mb-4">{t(`categories.${service.category}`)}</h1>
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500 font-medium">
+                <span className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-slate-400" /> By {vendor.name}
+                </span>
+                <span className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400" /> {service.location || vendor.applicationLocation}
+                </span>
               </div>
-              <h2 className="text-2xl serif text-slate-800 mb-6">{t('vendorDetail.heritage')}</h2>
-              <p className="text-slate-600 text-xl leading-relaxed font-light italic">{vendor.applicationStory || vendor.services?.[0]?.description}</p>
-              
-              {/* Photo Gallery Grid */}
-              {(vendor.applicationGalleryUrls || vendor.services?.[0]?.imageUrls) && (vendor.applicationGalleryUrls?.length || 0 > 0 || vendor.services?.[0]?.imageUrls?.length || 0 > 0) && (
-                <div className="mt-16 space-y-6">
-                  <h2 className="text-2xl serif text-slate-800">{t('vendorDetail.portfolio')}</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    {(vendor.applicationGalleryUrls || vendor.services?.[0]?.imageUrls)?.map((url, i) => (
-                      <div 
-                        key={i} 
-                        onClick={() => setActiveGallery({ images: (vendor.applicationGalleryUrls || vendor.services?.[0]?.imageUrls) || [], initialIndex: i })}
-                        className="aspect-square rounded-[2rem] overflow-hidden bg-slate-100 cursor-pointer"
-                      >
-                        <img src={url} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt={`${vendor.name} work ${i+1}`} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-            
-            <div className="space-y-8">
-              <h2 className="text-3xl serif px-6">{t('vendorDetail.offerings')}</h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                {vendor.services?.map(service => (
-                  <div key={service.id} className="bg-white p-6 md:p-10 border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group flex flex-col">
-                    {service.imageUrls && service.imageUrls.length > 0 && (
-                      <div className="w-full grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6 flex-shrink-0">
-                        {service.imageUrls.map((url, i) => (
-                          <div 
-                            key={i} 
-                            onClick={() => setActiveGallery({ images: service.imageUrls!, initialIndex: i })}
-                            className="rounded-xl overflow-hidden cursor-pointer bg-slate-100 aspect-square"
-                          >
-                            <img src={url} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" alt={`${service.category} ${i+1}`} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+            <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
+               <button 
+                 onClick={() => setIsModalOpen(true)} 
+                 className="w-full md:w-auto py-4 px-8 bg-slate-900 text-white rounded-2xl text-xs uppercase tracking-[0.2em] font-bold hover:bg-sky-600 transition-all shadow-xl shadow-slate-200"
+               >
+                  {t('vendorDetail.inquireNow')}
+               </button>
+            </div>
+          </div>
+
+          <div className="prose prose-slate max-w-none mb-12">
+            <h2 className="text-2xl serif text-slate-800 mb-4">About this Service</h2>
+            <p className="text-slate-600 text-lg leading-relaxed font-light">
+              {service.description}
+            </p>
+          </div>
+
+          {/* Packages */}
+          {service.packages && service.packages.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-2xl serif text-slate-800 mb-6">Available Packages</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {service.packages.map(pkg => (
+                  <div key={pkg.id} className="border border-slate-200 rounded-2xl p-6 hover:shadow-md transition-shadow group flex flex-col h-full bg-slate-50 hover:bg-white">
                     <div className="flex-grow">
-                      <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-xl font-medium text-slate-800 group-hover:text-sky-600 transition-colors uppercase tracking-widest text-[12px]">{service.category}</h3>
-                        <p className="text-[10px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-widest">{service.location}</p>
-                      </div>
-                      <p className="text-slate-500 text-sm leading-relaxed mb-6 font-light">{service.description}</p>
-                      
-                      {service.packages && service.packages.length > 0 && (
-                        <div className="space-y-4 mb-8">
-                           <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Packages</h4>
-                           {service.packages.map(pkg => (
-                              <div key={pkg.id} className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center">
-                                 <div>
-                                   <div className="text-xs font-bold text-slate-700">{pkg.name}</div>
-                                   <div className="text-[10px] text-slate-500 line-clamp-1">{pkg.description}</div>
-                                 </div>
-                                 <div className="text-[10px] font-bold text-sky-600 flex-shrink-0 ml-4">{pkg.price.toLocaleString()} SEK</div>
-                              </div>
-                           ))}
-                        </div>
-                      )}
+                      <h3 className="text-xl font-medium text-slate-900 mb-2 group-hover:text-sky-600 transition-colors">{pkg.name}</h3>
+                      <p className="text-slate-500 text-sm mb-4 line-clamp-3">{pkg.description}</p>
                     </div>
-                    <button onClick={() => setIsModalOpen(true)} className="w-full py-4 border border-slate-200 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-slate-900 hover:text-white transition-all shadow-sm mt-auto">
-                      {t('vendorDetail.inquireNow')}
-                    </button>
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+                       <span className="text-lg font-bold text-slate-900">{pkg.price} SEK</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-          <div className="space-y-8">
-             <div className="bg-slate-900 p-10 rounded-[3rem] text-white space-y-8 sticky top-24 shadow-2xl shadow-slate-900/30">
-                {inquirySent ? (
-                   <div className="text-center py-10 animate-in fade-in slide-in-from-top-4">
-                    <div className="w-20 h-20 bg-green-400/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle2 className="w-10 h-10 text-green-400" />
-                    </div>
-                    <h3 className="text-3xl serif mb-4">{t('vendorDetail.inquirySent')}</h3>
-                    <p className="text-slate-400 text-sm font-light leading-relaxed">{t('vendorDetail.inquirySentSub')}</p>
-                    <button onClick={() => setInquirySent(false)} className="mt-10 px-6 py-3 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
-                        {t('vendorDetail.sendAnother')}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="text-3xl serif italic">{t('vendorDetail.secureDate')}</h3>
-                    <p className="text-slate-400 text-sm font-light leading-relaxed">{t('vendorDetail.sidebarSub')}</p>
-                    <div className="space-y-4 pt-4">
-                       <button onClick={() => setIsModalOpen(true)} className="w-full bg-white text-slate-900 font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-500 hover:text-white transition-all shadow-xl shadow-sky-900/40">
-                        {t('vendorDetail.sendInquiry')}
-                       </button>
-                       {user?.role === 'ADMIN' && vendor.website && (
-                         <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="w-full border border-white/10 text-slate-500 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:text-white hover:border-white/30 transition-all text-center block">
-                           {t('vendorDetail.visitWebsite')}
-                         </a>
-                       )}
-                    </div>
-                    
-                    {/* Social Icons - Accessible to all users */}
-                    {(vendor.website || vendor.socials?.instagram || vendor.socials?.facebook || vendor.socials?.tiktok) && (
-                      <div className="pt-8 border-t border-white/5 space-y-4">
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em]">Connect With Us</p>
-                        <div className="flex gap-4">
-                          {vendor.website && (
-                            <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Globe className="w-4 h-4" />
-                            </a>
-                          )}
-                          {vendor.socials?.instagram && (
-                            <a href={vendor.socials.instagram} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Instagram className="w-4 h-4" />
-                            </a>
-                          )}
-                          {vendor.socials?.facebook && (
-                            <a href={vendor.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Facebook className="w-4 h-4" />
-                            </a>
-                          )}
-                          {vendor.socials?.tiktok && (
-                            <a href={vendor.socials.tiktok} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Music className="w-4 h-4" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
+          )}
 
-                    <div className="pt-8 border-t border-white/5 space-y-4">
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em]">{t('vendorDetail.alternatives')}</p>
-                        <div className="flex flex-col gap-4">
-                            {vendors.filter(v => v.id !== id && v.services?.[0]?.category === vendor.services?.[0]?.category).slice(0, 2).map(alt => (
-                                <Link key={alt.id} to={`/vendors/${alt.id}`} state={{ history: [...historyStack, location.pathname + location.search] }} className="flex items-center gap-4 group">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-white/5">
-                                        <img src={alt.services?.[0]?.imageUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
-                                    </div>
-                                    <div className="flex-grow overflow-hidden">
-                                        <p className="text-xs font-bold text-slate-300 truncate group-hover:text-white transition-colors">{alt.name}</p>
-                                        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">{alt.applicationLocation || alt.services?.[0]?.location}</p>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                  </>
-                )}
-             </div>
-          </div>
+          {/* Gallery */}
+          {galleryUrls.length > 0 && (
+            <div>
+              <h2 className="text-2xl serif text-slate-800 mb-6">Gallery</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {galleryUrls.map((url, idx) => (
+                  <div key={idx} onClick={() => setActiveGallery({ images: galleryUrls, initialIndex: idx })} className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 cursor-pointer">
+                    <img src={url} alt={`Gallery image ${idx}`} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+        
+        {/* Other Services */}
+        {otherServices.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl serif text-slate-800">More from {vendor.name}</h2>
+              <Link to={`/vendors/${vendor.id}`} state={{ history: [...historyStack, location.pathname + location.search] }} className="text-sm font-bold text-sky-600 uppercase tracking-widest hover:text-sky-700 flex items-center gap-1">
+                View Profile <ExternalLink className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {otherServices.map(otherService => (
+                <Link key={otherService.id} to={`/services/${vendor.id}/${otherService.id}`} state={{ history: [...historyStack, location.pathname + location.search] }} className="group bg-white rounded-2xl overflow-hidden border border-slate-200 hover:shadow-lg transition-all flex flex-col">
+                  <div className="aspect-[16/9] w-full overflow-hidden bg-slate-100">
+                    <img 
+                      src={otherService.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      alt={otherService.category} 
+                    />
+                  </div>
+                  <div className="p-6 flex-grow flex flex-col">
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2">
+                       {t(`categories.${otherService.category}`)}
+                    </span>
+                    <h3 className="text-lg font-medium text-slate-900 group-hover:text-sky-600 transition-colors mb-2">{t(`categories.${otherService.category}`)}</h3>
+                    <p className="text-slate-500 text-xs line-clamp-2 flex-grow">{otherService.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default VendorDetail;
+export default ServiceDetail;
