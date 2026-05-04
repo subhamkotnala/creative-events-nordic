@@ -553,6 +553,18 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                     {AVAILABLE_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                   </select>
                 </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Guest Capacity (Count)</label>
+                  <input 
+                    type="number"
+                    placeholder="e.g. 150"
+                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/20"
+                    value={tempService.count || ''}
+                    onChange={e => {
+                      setTempService({ ...tempService, count: Number(e.target.value) });
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Story */}
@@ -613,6 +625,20 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                             }} 
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">SEK</span>
+                        </div>
+                        <div className="relative w-32">
+                          <input 
+                            type="number" 
+                            placeholder="Cap." 
+                            className="w-full bg-white border-none rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-sky-500/20" 
+                            value={pkg.capacity || ''} 
+                            onChange={e => {
+                              const pkgs = [...(tempService.packages || [])];
+                              pkgs[pIdx].capacity = Number(e.target.value);
+                              setTempService({ ...tempService, packages: pkgs });
+                            }} 
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Pax</span>
                         </div>
                         <button 
                           type="button" 

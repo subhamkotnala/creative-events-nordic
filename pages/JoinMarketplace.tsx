@@ -7,7 +7,7 @@ import { optimizeVendorDescription } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Globe, Music, Loader2, Instagram, Facebook, Rocket, TrendingUp, Users, AlertCircle, Check,
-  Camera, Trash2, Sparkles, UploadCloud, Lock
+  Camera, Trash2, Sparkles, UploadCloud, Lock, ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { api } from '../services/api';
@@ -248,10 +248,24 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-slate-900 text-white py-20 pb-32">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl serif mb-6">{t('join.title')}</h1>
-          <p className="text-slate-400 text-lg font-light max-w-2xl mx-auto">{t('join.subtitle')}</p>
+      <div className="bg-slate-900 text-white pt-12 pb-32">
+        <div className="max-w-4xl mx-auto px-4">
+          <button 
+            onClick={() => {
+              if (window.history.length > 2) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }} 
+            className="bg-white/20 backdrop-blur-md p-3 rounded-full hover:bg-white text-white hover:text-slate-900 transition-colors mb-8 inline-block"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl serif mb-6">{t('join.title')}</h1>
+            <p className="text-slate-400 text-lg font-light max-w-2xl mx-auto">{t('join.subtitle')}</p>
+          </div>
         </div>
       </div>
 

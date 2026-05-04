@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { Vendor, VendorService, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Search, MapPin, Star, Building2 } from 'lucide-react';
+import { Search, MapPin, Star, Building2, Users, ArrowLeft } from 'lucide-react';
 
 interface ExploreProps {
   vendors: Vendor[];
@@ -16,19 +16,23 @@ interface FlattenedService {
 }
 
 const Explore: React.FC<ExploreProps> = ({ vendors }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const routerLocation = useLocation();
   const [category, setCategory] = useState<string>(searchParams.get('category') || 'All');
   const [location, setLocation] = useState<string>(searchParams.get('location') || 'All');
   const [search, setSearch] = useState('');
   const [minRating, setMinRating] = useState<number>(0);
+  const [minCapacity, setMinCapacity] = useState<number>(0);
 
   useEffect(() => {
     const cat = searchParams.get('category');
     const loc = searchParams.get('location');
+    const cap = searchParams.get('minCapacity');
     if (cat) setCategory(cat);
     if (loc) setLocation(loc);
+    if (cap) setMinCapacity(Number(cap));
   }, [searchParams]);
 
   // Flatten the services so they act as individual items in the marketplace
@@ -48,14 +52,31 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
                           (vendor.name?.toLowerCase() || '').includes(search.toLowerCase());
                           
     const matchesRating = vendor.rating >= minRating;
+
+    const matchesCapacity = minCapacity === 0 || 
+                            (service.count !== undefined && service.count >= minCapacity) ||
+                            (service.packages?.some(p => p.capacity !== undefined && p.capacity >= minCapacity) || false);
     
-    return matchesCat && matchesLoc && matchesSearch && matchesRating;
+    return matchesCat && matchesLoc && matchesSearch && matchesRating && matchesCapacity;
   });
 
   const categories = ['All', ...Object.values(VendorCategory)];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
+      <button 
+        onClick={() => {
+          if (window.history.length > 2) {
+            navigate(-1);
+          } else {
+            navigate('/');
+          }
+        }} 
+        className="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-md hover:scale-110 transition-transform mb-8 inline-block border border-slate-100"
+      >
+        <ArrowLeft className="w-5 h-5 text-slate-900" />
+      </button>
+
       <div className="mb-12">
         <h1 className="text-4xl serif mb-4">{t('explore.title')}</h1>
         <p className="text-slate-500">Discover packages and services from our verified partners.</p>
@@ -102,6 +123,19 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
             <option value={4.5}>{t('search.fourHalfPlus')}</option>
             <option value={4.8}>4.8+ Stars</option>
           </select>
+
+          <select 
+            className="w-full sm:w-auto flex-grow md:flex-none bg-slate-100 border-none rounded-xl px-6 py-3 text-sm font-medium focus:ring-1 focus:ring-sky-500 outline-none cursor-pointer"
+            value={minCapacity}
+            onChange={(e) => setMinCapacity(Number(e.target.value))}
+          >
+            <option value={0}>{language === 'sv' ? 'Alla storlekar' : 'Any Capacity'}</option>
+            <option value={20}>20+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+            <option value={50}>50+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+            <option value={100}>100+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+            <option value={200}>200+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+            <option value={500}>500+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+          </select>
         </div>
       </div>
 
@@ -113,6 +147,7 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
               <div className="aspect-[4/3] overflow-hidden rounded-2xl mb-6 bg-slate-200">
                 <img 
                   src={service.imageUrl || service.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                   alt={service.category}
                 />
@@ -134,6 +169,15 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
                     <Star className="w-3 h-3" fill="currentColor" />
                     <span>{vendor.rating.toFixed(1)}</span>
                   </div>
+                  {service.count !== undefined && service.count > 0 && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        <span>{service.count}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <p className="text-slate-500 text-sm line-clamp-2 font-light leading-relaxed">
                   {service.description}

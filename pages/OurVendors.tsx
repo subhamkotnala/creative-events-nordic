@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { Vendor, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Search, MapPin, Star } from 'lucide-react';
+import { Search, MapPin, Star, ArrowLeft } from 'lucide-react';
 
 interface OurVendorsProps {
   vendors: Vendor[];
@@ -11,6 +11,7 @@ interface OurVendorsProps {
 
 const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const routerLocation = useLocation();
   const [category, setCategory] = useState<string>(searchParams.get('category') || 'All');
@@ -52,6 +53,19 @@ const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
+      <button 
+        onClick={() => {
+          if (window.history.length > 2) {
+            navigate(-1);
+          } else {
+            navigate('/');
+          }
+        }} 
+        className="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-md hover:scale-110 transition-transform mb-8 inline-block border border-slate-100"
+      >
+        <ArrowLeft className="w-5 h-5 text-slate-900" />
+      </button>
+
       <div className="mb-12">
         <h1 className="text-4xl serif mb-4">Our Vendors</h1>
         <p className="text-slate-500">Discover all verified partners in the Creative Events network.</p>

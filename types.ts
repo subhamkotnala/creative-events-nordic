@@ -37,6 +37,7 @@ export interface ServicePackage {
   description: string;
   price: number;
   imageUrls?: string[];
+  capacity?: number;
 }
 
 export interface VendorService {
@@ -47,6 +48,7 @@ export interface VendorService {
   imageUrl?: string;
   imageUrls?: string[];
   packages: ServicePackage[];
+  count?: number;
 }
 
 export interface Vendor {

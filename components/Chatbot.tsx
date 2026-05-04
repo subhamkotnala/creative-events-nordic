@@ -56,7 +56,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
+      const getApiKey = () => {
+        const key = process.env.GEMINI_API_KEY;
+        if (!key || key === 'undefined' || key.includes('failed to load')) return null;
+        return key;
+      };
+
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        throw new Error("Gemini API key not configured.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const vendorContext = approvedVendors.map(v => {
         const primaryService = v.services?.[0];

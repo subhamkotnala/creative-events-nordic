@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Star, Shield, Layout, ChevronLeft, ChevronRight, Search, MapPin, Grid, Building2, Camera, Music, UtensilsCrossed, Flower, ClipboardList, Award, HeartHandshake, Send } from 'lucide-react';
+import { ArrowRight, Star, Shield, Layout, ChevronLeft, ChevronRight, Search, MapPin, Grid, Building2, Camera, Music, UtensilsCrossed, Flower, ClipboardList, Award, HeartHandshake, Send, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VendorCategory, Vendor } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
@@ -17,12 +17,13 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedLocation, setSelectedLocation] = useState('All');
+  const [selectedCapacity, setSelectedCapacity] = useState<number>(0);
   const navigate = useNavigate();
   const routerLocation = useLocation();
 
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [contactForm, setContactForm] = useState({ vision: '', email: '', phone: '' });
+  const [contactForm, setContactForm] = useState({ vision: '', email: '', phone: '', capacity: '' });
 
   const SLIDES = [
     {
@@ -48,12 +49,19 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
   ];
 
   const CATEGORIES_DATA = [
-    { name: VendorCategory.VENUES, icon: Building2 },
-    { name: VendorCategory.PHOTOGRAPHY, icon: Camera },
-    { name: VendorCategory.MUSIC, icon: Music },
-    { name: VendorCategory.CATERING, icon: UtensilsCrossed },
-    { name: VendorCategory.DECOR, icon: Flower },
-    { name: VendorCategory.EVENT_PLANNERS, icon: ClipboardList },
+    { name: VendorCategory.VENUES, icon: Building2, color: 'text-blue-500/80', hoverBg: 'hover:bg-blue-50/40', accent: 'bg-blue-400', image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800" },
+    { name: VendorCategory.PHOTOGRAPHY, icon: Camera, color: 'text-emerald-500/80', hoverBg: 'hover:bg-emerald-50/40', accent: 'bg-emerald-400', image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800" },
+    { name: VendorCategory.MUSIC, icon: Music, color: 'text-rose-500/80', hoverBg: 'hover:bg-rose-50/40', accent: 'bg-rose-400', image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800" },
+    { name: VendorCategory.CATERING, icon: UtensilsCrossed, color: 'text-amber-500/80', hoverBg: 'hover:bg-amber-50/40', accent: 'bg-amber-400', image: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800" },
+    { name: VendorCategory.DECOR, icon: Flower, color: 'text-indigo-500/80', hoverBg: 'hover:bg-indigo-50/40', accent: 'bg-indigo-400', image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=800" },
+    { name: VendorCategory.EVENT_PLANNERS, icon: ClipboardList, color: 'text-violet-500/80', hoverBg: 'hover:bg-violet-50/40', accent: 'bg-violet-400', image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800" },
+  ];
+
+  const POPULAR_CITIES = [
+    { name: 'Stockholm', color: 'text-slate-800', hoverBg: 'hover:bg-slate-50', accent: 'bg-slate-900' },
+    { name: 'Gothenburg', color: 'text-slate-800', hoverBg: 'hover:bg-slate-50', accent: 'bg-slate-900' },
+    { name: 'Malmö', color: 'text-slate-800', hoverBg: 'hover:bg-slate-50', accent: 'bg-slate-900' },
+    { name: 'Uppsala', color: 'text-slate-800', hoverBg: 'hover:bg-slate-50', accent: 'bg-slate-900' },
   ];
 
   useEffect(() => {
@@ -67,6 +75,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
     const params = new URLSearchParams();
     if (selectedCategory !== 'All') params.set('category', selectedCategory);
     if (selectedLocation !== 'All') params.set('location', selectedLocation);
+    if (selectedCapacity > 0) params.set('minCapacity', selectedCapacity.toString());
     navigate(`/explore?${params.toString()}`);
   };
 
@@ -80,12 +89,13 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
         {
           message: contactForm.vision,
           user_email: contactForm.email,
-          user_phone: contactForm.phone || 'Not provided'
+          user_phone: contactForm.phone || 'Not provided',
+          user_capacity: contactForm.capacity || 'Not provided'
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "xaAogphDl0s4ydiOa"
       );
       setFormSubmitted(true);
-      setContactForm({ vision: '', email: '', phone: '' });
+      setContactForm({ vision: '', email: '', phone: '', capacity: '' });
       setTimeout(() => setFormSubmitted(false), 5000);
     } catch (error) {
       console.error("Failed to send contact form:", error);
@@ -114,6 +124,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
             <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 z-10" />
             <img 
               src={slide.url} 
+              referrerPolicy="no-referrer"
               className={`w-full h-full object-cover transform transition-transform duration-[10000ms] ease-out ${
                 index === currentSlide ? 'scale-[1.15]' : 'scale-100'
               }`}
@@ -148,7 +159,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
           {/* Enhanced Search Bar */}
           <div className="bg-white/10 backdrop-blur-xl p-2 rounded-[2rem] border border-white/20 max-w-3xl mx-auto shadow-2xl animate-in fade-in zoom-in duration-1000 delay-300">
             <div className="flex flex-col md:flex-row items-center gap-2 bg-white rounded-[1.8rem] p-2">
-              <div className="flex-1 flex items-center px-6 border-b md:border-b-0 md:border-r border-slate-100 w-full md:w-auto h-14">
+              <div className="flex-1 flex items-center px-6 border-b md:border-b-0 md:border-r border-slate-100 w-full md:w-auto h-12">
                 <Grid className="w-5 h-5 text-sky-600 mr-3 flex-shrink-0" />
                 <select 
                   className="w-full h-full text-sm font-semibold text-slate-700 bg-transparent border-none focus:ring-0 outline-none cursor-pointer tracking-wide"
@@ -162,7 +173,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                 </select>
               </div>
               
-              <div className="flex-1 flex items-center px-6 w-full md:w-auto h-14">
+              <div className="flex-1 flex items-center px-6 border-b md:border-b-0 md:border-r border-slate-100 w-full md:w-auto h-12">
                 <MapPin className="w-5 h-5 text-sky-600 mr-3 flex-shrink-0" />
                 <select 
                   className="w-full h-full text-sm font-semibold text-slate-700 bg-transparent border-none focus:ring-0 outline-none cursor-pointer tracking-wide"
@@ -176,9 +187,25 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                 </select>
               </div>
 
+              <div className="flex-1 flex items-center px-6 w-full md:w-auto h-12">
+                <Users className="w-5 h-5 text-sky-600 mr-3 flex-shrink-0" />
+                <select 
+                  className="w-full h-full text-sm font-semibold text-slate-700 bg-transparent border-none focus:ring-0 outline-none cursor-pointer tracking-wide"
+                  value={selectedCapacity}
+                  onChange={(e) => setSelectedCapacity(Number(e.target.value))}
+                >
+                  <option value={0}>{language === 'sv' ? 'Storlek' : 'Capacity'}</option>
+                  <option value={20}>20+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+                  <option value={50}>50+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+                  <option value={100}>100+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+                  <option value={200}>200+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+                  <option value={500}>500+ {language === 'sv' ? 'Gäster' : 'Guests'}</option>
+                </select>
+              </div>
+
               <button 
                 onClick={handleSearch}
-                className="w-full md:w-auto bg-slate-900 text-white px-10 h-14 rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl hover:scale-105 active:scale-95"
+                className="w-full md:w-auto bg-slate-900 text-white px-10 h-12 rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl hover:scale-105 active:scale-95"
               >
                 <Search className="w-4 h-4" /> {t('hero.explore')}
               </button>
@@ -207,24 +234,139 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="max-w-7xl mx-auto px-4 py-20">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 text-sky-700 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">
-            <Award className="w-3 h-3" /> {t('home.selectionBadge')}
-          </div>
-          <h2 className="text-4xl serif mb-4">{t('home.categoriesTitle')}</h2>
-          <p className="text-slate-500">{t('home.categoriesSub')}</p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-          {CATEGORIES_DATA.map(cat => (
-            <Link to={`/explore?category=${cat.name}`} key={cat.name} className="group text-center">
-              <div className="w-24 h-24 bg-white border border-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:shadow-xl group-hover:border-sky-200 group-hover:scale-105 transition-all duration-300">
-                <cat.icon className="w-8 h-8 text-slate-400 group-hover:text-sky-600 transition-colors" strokeWidth={1.5} />
-              </div>
-              <h3 className="font-bold text-[10px] uppercase tracking-widest text-slate-500 group-hover:text-sky-700">{t(`categories.${cat.name}`)}</h3>
+      {/* Categories Section - Minimalist Image Cards */}
+      <section className="bg-white py-32 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div className="max-w-2xl">
+              <h2 className="text-4xl md:text-5xl serif mb-4">
+                {t('home.categoriesTitle')}
+              </h2>
+              <p className="text-slate-500 font-light text-lg">
+                {t('home.categoriesSub')}
+              </p>
+            </div>
+            <Link to="/explore" className="text-slate-900 font-medium text-[11px] uppercase tracking-[0.2em] flex items-center gap-2 hover:opacity-70 transition-opacity border-b pb-1 border-slate-900">
+              {language === 'sv' ? 'Utforska alla' : 'Explore All'} <ArrowRight className="w-4 h-4" />
             </Link>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {CATEGORIES_DATA.map((cat, idx) => (
+              <motion.div
+                key={cat.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+              >
+                <Link 
+                  to={`/explore?category=${cat.name}`}
+                  className="group block relative aspect-square w-[90%] mx-auto overflow-hidden rounded-[1.5rem] bg-slate-100"
+                >
+                  <img 
+                    src={cat.image}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105"
+                    alt={cat.name}
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-black/20 transition-colors duration-700 group-hover:bg-black/30" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700" />
+                  
+                  <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                    <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-6 border border-white/20">
+                        <cat.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-3xl text-white serif tracking-wide mb-2">
+                        {t(`categories.${cat.name}`)}
+                      </h3>
+                      <div className="overflow-hidden">
+                        <p className="text-white/80 font-mono text-[10px] uppercase tracking-widest translate-y-full group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-75">
+                          {language === 'sv' ? 'Utforska' : 'Explore'} →
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-24 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid lg:grid-cols-12 gap-16 items-center">
+            <div className="lg:col-span-5 relative min-h-[480px] rounded-[3.5rem] overflow-hidden group">
+              <img 
+                src="https://images.unsplash.com/photo-1550475056-bdb1b4d3c1b9?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+                alt="Stockholm"
+              />
+              <div className="absolute inset-0 bg-black/20 transition-colors duration-700 group-hover:bg-black/30" />
+              <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/20 to-transparent" />
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="relative z-10 h-full p-10 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6">
+                    {language === 'sv' ? 'Våra Destinationer' : 'Our Destinations'}
+                  </div>
+                  <h2 className="text-5xl md:text-6xl serif italic leading-[1.1] text-white">
+                    {language === 'sv' ? 'Upptäck charmiga platser i städerna.' : 'Discover charming spaces in the cities.'}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-6 group cursor-pointer" onClick={() => navigate('/explore')}>
+                  <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transform group-hover:rotate-45 transition-transform duration-500">
+                    <ArrowRight className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white underline decoration-white/30 underline-offset-8 group-hover:decoration-white transition-all">
+                    {language === 'sv' ? 'Se alla städer' : 'View all cities'}
+                  </span>
+                </div>
+              </motion.div>
+            </div>
+
+            <div className="lg:col-span-6 lg:col-start-7">
+              <div className="divide-y divide-slate-100">
+                {POPULAR_CITIES.map((city, idx) => (
+                  <motion.div
+                    key={city.name}
+                    initial={{ opacity: 0, x: 50 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: idx * 0.1 }}
+                  >
+                    <Link 
+                      to={`/explore?location=${city.name}`}
+                      className={`group block relative py-8 px-6 transition-all duration-500 ${city.hoverBg} -mx-6 rounded-[2.5rem]`}
+                    >
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-12">
+                          <span className="text-slate-300 font-mono text-sm tracking-tighter">0{idx + 1}</span>
+                          <h3 className={`text-2xl md:text-3xl serif italic transition-all duration-500 group-hover:translate-x-4 ${city.color}`}>
+                            {city.name}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 -translate-x-10 group-hover:translate-x-0 transition-all duration-500">
+                          <div className={`w-12 h-12 rounded-full ${city.accent} text-white flex items-center justify-center shadow-lg shadow-sky-900/10`}>
+                            <ArrowRight className="w-6 h-6" />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -249,6 +391,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                   <div className="aspect-[4/3] overflow-hidden">
                     <img 
                       src={primaryService?.imageUrl || primaryService?.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                       alt={vendor.name}
                     />
@@ -270,6 +413,42 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                 <p className="text-slate-400 italic serif text-xl">Our featured selection is updated weekly. Check back soon!</p>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="bg-white py-24">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-4xl serif mb-16">{language === 'sv' ? 'Så fungerar det' : 'How it Works'}</h2>
+          <div className="grid md:grid-cols-3 gap-16">
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500/80">
+                <Search className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl serif italic">{language === 'sv' ? '1. Hitta' : '1. Find'}</h3>
+              <p className="text-slate-500 font-light leading-relaxed">
+                {language === 'sv' ? 'Sök igenom Sveriges största urval av lokaler och tjänster för ditt evenemang.' : 'Search through Sweden\'s largest selection of event spaces and services for your event.'}
+              </p>
+            </div>
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-500/80">
+                <Send className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl serif italic">{language === 'sv' ? '2. Kontakta' : '2. Connect'}</h3>
+              <p className="text-slate-500 font-light leading-relaxed">
+                {language === 'sv' ? 'Skicka förfrågningar direkt till leverantörer och få de bästa erbjudandena.' : 'Send inquiries directly to providers and get the best offers.'}
+              </p>
+            </div>
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500/80">
+                <HeartHandshake className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl serif italic">{language === 'sv' ? '3. Fira' : '3. Celebrate'}</h3>
+              <p className="text-slate-500 font-light leading-relaxed">
+                {language === 'sv' ? 'Boka den perfekta matchen och anordna ett oförglömligt evenemang.' : 'Book the perfect match and host an unforgettable event.'}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -323,7 +502,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                         type="text" required
                         value={contactForm.vision}
                         onChange={(e) => setContactForm({...contactForm, vision: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
                         placeholder={t('home.visionPlaceholder')} 
                       />
                     </div>
@@ -333,7 +512,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                         type="email" required
                         value={contactForm.email}
                         onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
                         placeholder="your@email.com" 
                       />
                     </div>
@@ -343,14 +522,24 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                         type="tel" required
                         value={contactForm.phone}
                         onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
                         placeholder="+46 70 123 45 67" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Antal gäster' : 'Guest Capacity'}</label>
+                      <input 
+                        type="number" required
+                        value={contactForm.capacity}
+                        onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
+                        placeholder="e.g. 150" 
                       />
                     </div>
                     <button 
                       type="submit"
                       disabled={isSending}
-                      className="w-full bg-sky-600 text-white font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-white hover:text-slate-900 transition-all shadow-xl shadow-sky-950 disabled:opacity-50"
+                      className="w-full bg-sky-600 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-white hover:text-slate-900 transition-all shadow-xl shadow-sky-950 disabled:opacity-50"
                     >
                       {isSending ? 'Sending...' : t('home.sendRequest')}
                     </button>

@@ -120,8 +120,8 @@ const AppContent: React.FC = () => {
     await refreshVendors();
   };
 
-  const deleteVendor = async (id: string) => {
-    await api.deleteVendor(id);
+  const deleteVendor = async (auth_id: string, id: string) => {
+    await api.deleteUser(auth_id, id);
     await refreshVendors();
   };
 
@@ -199,11 +199,11 @@ const AppContent: React.FC = () => {
             <span className="font-brand text-base sm:text-lg font-extrabold uppercase tracking-[0.15em] text-slate-900 pt-1">Creative Events</span>
           </Link>
 
-          <div className="flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 pt-1 order-3 md:order-2 w-full md:w-auto mt-1 md:mt-0 md:mr-auto md:ml-8">
-            <Link to="/explore" className="hover:text-sky-600 transition-colors">Marketplace</Link>
-            <Link to="/vendors" className="hover:text-sky-600 transition-colors">Our Vendors</Link>
+          <div className="flex items-center justify-center gap-8 text-[11px] font-brand font-bold uppercase tracking-[0.15em] text-slate-700 pt-1 order-3 md:order-2 w-full md:w-auto mt-2 md:mt-0 md:mr-auto md:ml-12">
+            <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">Marketplace</Link>
+            <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">Our Vendors</Link>
             {user?.role !== 'VENDOR' && (
-              <Link to="/join" className="hover:text-sky-600 transition-colors">Join Marketplace</Link>
+              <Link to="/join" className="hover:text-slate-900 transition-colors py-1">Join Marketplace</Link>
             )}
           </div>
 

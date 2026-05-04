@@ -88,6 +88,7 @@ class ApiService {
         // Upsert approved vendor in profiles
         const updateData: any = {
             id: vendor.id,
+            auth_id: vendor.auth_id,
             business_name: vendor.name,
             email: vendor.email,
             role: 'VENDOR',
@@ -132,27 +133,31 @@ class ApiService {
     }
   }
 
-  async deleteUser(auth_id: string): Promise<void> {
+  async deleteUser(auth_id: string, id: string): Promise<void> {
+    // 1. Call server API to delete from auth.users AND profiles/applications by auth_id
     const response = await fetch(`/api/users/${auth_id}`, {
       method: 'DELETE',
     });
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to delete user");
+      throw new Error(errorData.error || "Deletion failed on server.");
+    }
+
+    // 2. Local cleanup for any remaining records if id differed from auth_id 
+    // and server didn't catch them by auth_id
+    if (id && id !== auth_id) {
+       await supabase.from('profiles').delete().eq('id', id);
+       await supabase.from('applications').delete().eq('id', id);
     }
   }
 
   async deleteVendor(id: string): Promise<void> {
-    const { error } = await supabase.rpc('delete_user_by_admin', { target_user_id: id });
-    if (error) {
-      console.warn("Failed to delete user via RPC. Fallback to standard delete.", error);
-      // Try to delete by id (vendor.id) and auth_id (in case auth_id was passed)
-      await supabase.from('profiles').delete().eq('id', id);
-      await supabase.from('profiles').delete().eq('auth_id', id);
-      await supabase.from('applications').delete().eq('id', id);
-      await supabase.from('applications').delete().eq('auth_id', id);
-    }
+    // Try both id and auth_id
+    await supabase.from('profiles').delete().eq('id', id);
+    await supabase.from('profiles').delete().eq('auth_id', id);
+    await supabase.from('applications').delete().eq('id', id);
+    await supabase.from('applications').delete().eq('auth_id', id);
   }
 
   async updateVendorStatus(id: string, status: VendorStatus): Promise<void> {
@@ -274,6 +279,7 @@ class ApiService {
       return {
           id: p.id,
           userId: p.id,
+          auth_id: p.auth_id || p.id, // Profile id is usually the auth_id
           name: p.business_name,
           status: status,
           services: p.services || [],
@@ -297,6 +303,7 @@ class ApiService {
       return {
           id: a.id,
           userId: 'pending',
+          auth_id: a.auth_id,
           name: a.business_name,
           status: a.status as VendorStatus,
           services: a.services || [],

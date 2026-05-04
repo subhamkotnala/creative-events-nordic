@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { VendorCategory, Vendor } from '../types';
-import { MapPin, ArrowLeft, Building2, ExternalLink, Mail, Calendar, Send, X, CheckCircle2, User, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, ArrowLeft, Building2, ExternalLink, Mail, Calendar, Send, X, CheckCircle2, User, Loader2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import emailjs from '@emailjs/browser';
@@ -153,7 +153,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
               
               {/* Header Section */}
               <div className="relative h-32 bg-slate-900 overflow-hidden flex-shrink-0">
-                <img src={service.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} className="w-full h-full object-cover opacity-40" alt="" />
+                <img src={service.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-40" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                 <button 
                   onClick={() => setIsModalOpen(false)} 
@@ -372,6 +372,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   src={activeGallery.images[currentImageIndex]} 
+                  referrerPolicy="no-referrer"
                   className="max-w-full max-h-full object-contain"
                   alt="Gallery Preview"
                   onLoad={() => setIsGalleryImageLoading(false)}
@@ -412,7 +413,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                   {i === currentImageIndex && (
                      <motion.div layoutId="activeImageBorder" className="absolute inset-0 border-2 border-sky-500 rounded-xl" />
                   )}
-                  <img src={img} className={`w-full h-full object-cover transition-all ${i === currentImageIndex ? 'scale-110 opacity-100' : ''}`} alt="" />
+                  <img src={img} referrerPolicy="no-referrer" className={`w-full h-full object-cover transition-all ${i === currentImageIndex ? 'scale-110 opacity-100' : ''}`} alt="" />
                 </button>
               ))}
             </motion.div>
@@ -424,6 +425,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
       <div className="h-[50vh] w-full relative overflow-hidden bg-slate-900">
         <img 
           src={service.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+          referrerPolicy="no-referrer"
           className="w-full h-full object-cover opacity-60" 
           alt={service.category} 
         />
@@ -475,6 +477,11 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                 <span className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-slate-400" /> {service.location || vendor.applicationLocation}
                 </span>
+                {service.count !== undefined && service.count > 0 && (
+                  <span className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-slate-400" /> {service.count} {language === 'sv' ? 'Gäster' : 'Guests'}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
@@ -504,6 +511,12 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                     <div className="flex-grow">
                       <h3 className="text-xl font-medium text-slate-900 mb-2 group-hover:text-sky-600 transition-colors">{pkg.name}</h3>
                       <p className="text-slate-500 text-sm mb-4 line-clamp-3">{pkg.description}</p>
+                      {pkg.capacity !== undefined && pkg.capacity > 0 && (
+                        <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-4">
+                          <Users className="w-3 h-3" />
+                          <span>{pkg.capacity} {language === 'sv' ? 'Gäster' : 'Guests'}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
                        <span className="text-lg font-bold text-slate-900">{pkg.price} SEK</span>
@@ -521,7 +534,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {galleryUrls.map((url, idx) => (
                   <div key={idx} onClick={() => setActiveGallery({ images: galleryUrls, initialIndex: idx })} className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 cursor-pointer">
-                    <img src={url} alt={`Gallery image ${idx}`} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
+                    <img src={url} referrerPolicy="no-referrer" alt={`Gallery image ${idx}`} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
                   </div>
                 ))}
               </div>
@@ -544,6 +557,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                   <div className="aspect-[16/9] w-full overflow-hidden bg-slate-100">
                     <img 
                       src={otherService.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                       alt={otherService.category} 
                     />

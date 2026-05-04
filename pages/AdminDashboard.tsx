@@ -60,7 +60,7 @@ interface AdminDashboardProps {
   vendors: Vendor[];
   onUpdateStatus: (id: string, status: VendorStatus) => Promise<any>;
   onToggleFeature: (id: string) => void;
-  onDeleteVendor: (id: string) => void;
+  onDeleteVendor: (auth_id: string, id: string) => void;
   onUpdateVendor: (v: Vendor) => void;
   onAddVendor: (v: Vendor) => void;
 }
@@ -205,11 +205,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       message: `Are you sure you want to delete ${vendor.name}? This will delete the user from system i.e., he cannot login anymore and cannot be undone.`,
       action: async () => {
         try {
-            if (vendor.auth_id) {
-                await api.deleteUser(vendor.auth_id);
-            }
-            onDeleteVendor(vendor.auth_id || vendor.id);
-            setNotifications(prev => [`System: Deleted partner record`, ...prev]);
+            await onDeleteVendor(vendor.auth_id || vendor.id, vendor.id);
+            setNotifications(prev => [`System: Deleted partner record: ${vendor.name}`, ...prev]);
             setConfirmAction(null);
         } catch (err) {
             console.error("Delete failed:", err);

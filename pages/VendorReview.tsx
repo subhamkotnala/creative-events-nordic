@@ -94,7 +94,9 @@ const VendorReview: React.FC<VendorReviewProps> = ({
       action: async () => {
         try {
             if (v.auth_id) {
-                await api.deleteUser(v.auth_id);
+                await api.deleteUser(v.auth_id, v.id);
+            } else {
+                await api.deleteVendor(v.id);
             }
             onUpdateStatus(v.id, VendorStatus.REJECTED);
             setNotifications(prev => [`System: Declined application for ${v.name}`, ...prev]);
