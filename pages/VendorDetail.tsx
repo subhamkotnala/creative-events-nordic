@@ -503,12 +503,12 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                         <div className="space-y-4 mb-8">
                            <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Packages</h4>
                            {service.packages.map(pkg => (
-                              <div key={pkg.id} className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center">
-                                 <div>
+                              <div key={pkg.id} className="bg-slate-50 p-4 rounded-2xl flex flex-col items-start gap-2">
+                                 <div className="flex justify-between items-start w-full">
                                    <div className="text-xs font-bold text-slate-700">{pkg.name}</div>
-                                   <div className="text-[10px] text-slate-500 line-clamp-1">{pkg.description}</div>
+                                   <div className="text-[10px] font-bold text-sky-600 flex-shrink-0 ml-4">{pkg.price.toLocaleString()} SEK</div>
                                  </div>
-                                 <div className="text-[10px] font-bold text-sky-600 flex-shrink-0 ml-4">{pkg.price.toLocaleString()} SEK</div>
+                                 <div className="text-[10px] text-slate-500 max-h-24 overflow-y-auto pr-2 w-full">{pkg.description}</div>
                               </div>
                            ))}
                         </div>
@@ -550,8 +550,8 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                        )}
                     </div>
                     
-                    {/* Social Icons - Accessible to all users */}
-                    {(vendor.website || vendor.socials?.instagram || vendor.socials?.facebook || vendor.socials?.tiktok) && (
+                    {/* Social Icons - Accessible only to admins */}
+                    {user?.role === 'ADMIN' && (vendor.website || vendor.socials?.instagram || vendor.socials?.facebook || vendor.socials?.tiktok) && (
                       <div className="pt-8 border-t border-white/5 space-y-4">
                         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em]">Connect With Us</p>
                         <div className="flex gap-4">
@@ -578,23 +578,6 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                         </div>
                       </div>
                     )}
-
-                    <div className="pt-8 border-t border-white/5 space-y-4">
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em]">{t('vendorDetail.alternatives')}</p>
-                        <div className="flex flex-col gap-4">
-                            {vendors.filter(v => v.id !== id && v.services?.[0]?.category === vendor.services?.[0]?.category).slice(0, 2).map(alt => (
-                                <Link key={alt.id} to={`/vendors/${alt.id}`} state={{ history: [...historyStack, location.pathname + location.search] }} className="flex items-center gap-4 group">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-white/5">
-                                        <img src={alt.services?.[0]?.imageUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
-                                    </div>
-                                    <div className="flex-grow overflow-hidden">
-                                        <p className="text-xs font-bold text-slate-300 truncate group-hover:text-white transition-colors">{alt.name}</p>
-                                        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">{alt.applicationLocation || alt.services?.[0]?.location}</p>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
                   </>
                 )}
              </div>

@@ -112,6 +112,7 @@ const VendorProfile: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor })
     name: '',
     email: '',
     phone: '',
+    applicationLocation: AVAILABLE_LOCATIONS[0],
     website: '',
     socials: {
       instagram: '',
@@ -186,6 +187,7 @@ const VendorProfile: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor })
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone || '',
+        applicationLocation: vendor.applicationLocation || AVAILABLE_LOCATIONS[0],
         website: vendor.website || '',
         socials: {
             instagram: vendor.socials?.instagram || '',
@@ -272,6 +274,32 @@ const VendorProfile: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor })
         ...currentVendor,
         ...formData,
       };
+
+      const changes: string[] = [];
+      if (currentVendor.name !== formData.name) changes.push(`Name: ${currentVendor.name} -> ${formData.name}`);
+      if (currentVendor.phone !== formData.phone) changes.push(`Phone: ${currentVendor.phone || 'none'} -> ${formData.phone || 'none'}`);
+      if (currentVendor.applicationLocation !== formData.applicationLocation) changes.push(`Location: ${currentVendor.applicationLocation || 'none'} -> ${formData.applicationLocation || 'none'}`);
+      if (currentVendor.website !== formData.website) changes.push(`Website: ${currentVendor.website || 'none'} -> ${formData.website || 'none'}`);
+      if (currentVendor.socials?.instagram !== formData.socials.instagram) changes.push(`Instagram: ${currentVendor.socials?.instagram || 'none'} -> ${formData.socials.instagram || 'none'}`);
+      if (currentVendor.socials?.facebook !== formData.socials.facebook) changes.push(`Facebook: ${currentVendor.socials?.facebook || 'none'} -> ${formData.socials.facebook || 'none'}`);
+      if (currentVendor.socials?.tiktok !== formData.socials.tiktok) changes.push(`TikTok: ${currentVendor.socials?.tiktok || 'none'} -> ${formData.socials.tiktok || 'none'}`);
+
+      const EMAILJS_PROFILE_UPDATE_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_PROFILE_UPDATE_TEMPLATE_ID || "template_owheiam";
+      if (changes.length > 0 && EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY) {
+         try {
+           await emailjs.send(
+             EMAILJS_SERVICE_ID,
+             EMAILJS_PROFILE_UPDATE_TEMPLATE_ID,
+             {
+               user_vendor: currentVendor.name,
+               update_details: "Profile Updates:\n" + changes.join("\n")
+             },
+             EMAILJS_PUBLIC_KEY
+           );
+         } catch (emailErr) {
+           console.error("Failed to send profile update email:", emailErr);
+         }
+      }
 
       await onAddVendor(updatedVendor);
       setShowSuccess(true);
@@ -369,6 +397,14 @@ const VendorProfile: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor })
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
               <input type="tel" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '') })} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Location</label>
+              <select className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500 text-slate-700" value={formData.applicationLocation} onChange={e => setFormData({ ...formData, applicationLocation: e.target.value })}>
+                {AVAILABLE_LOCATIONS.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

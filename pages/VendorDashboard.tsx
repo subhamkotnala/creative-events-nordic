@@ -280,6 +280,38 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
       const currentServiceIds = new Set(currentVendor.services?.map(s => s.id) || []);
       const newServices = servicesToSave.filter(s => !currentServiceIds.has(s.id));
       
+      const changes: string[] = [];
+      if (currentVendor.name !== formData.name) changes.push(`Name: ${currentVendor.name} -> ${formData.name}`);
+      if (currentVendor.phone !== formData.phone) changes.push(`Phone: ${currentVendor.phone || 'none'} -> ${formData.phone || 'none'}`);
+      if (currentVendor.website !== formData.website) changes.push(`Website: ${currentVendor.website || 'none'} -> ${formData.website || 'none'}`);
+      
+      const existingServices = servicesToSave.filter(s => currentServiceIds.has(s.id));
+      for (const s of existingServices) {
+         const oldS = currentVendor.services?.find(old => old.id === s.id);
+         if (oldS) {
+            if (oldS.description !== s.description) changes.push(`Service (${s.category}) description updated.`);
+            if (oldS.location !== s.location) changes.push(`Service (${s.category}) location updated: ${oldS.location || 'none'} -> ${s.location || 'none'}`);
+            if (JSON.stringify(oldS.packages) !== JSON.stringify(s.packages)) changes.push(`Service (${s.category}) packages updated.`);
+         }
+      }
+
+      const EMAILJS_PROFILE_UPDATE_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_PROFILE_UPDATE_TEMPLATE_ID || "template_owheiam";
+      if (changes.length > 0 && EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY) {
+         try {
+           await emailjs.send(
+             EMAILJS_SERVICE_ID,
+             EMAILJS_PROFILE_UPDATE_TEMPLATE_ID,
+             {
+               user_vendor: currentVendor.name,
+               update_details: "Updates:\n" + changes.join("\n")
+             },
+             EMAILJS_PUBLIC_KEY
+           );
+         } catch (emailErr) {
+           console.error("Failed to send profile update email:", emailErr);
+         }
+      }
+
       if (newServices.length > 0 && EMAILJS_SERVICE_ID && EMAILJS_NEW_SERVICE_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
         try {
           await Promise.all(newServices.map(service => 

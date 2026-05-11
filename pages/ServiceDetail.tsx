@@ -510,7 +510,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                   <div key={pkg.id} className="border border-slate-200 rounded-2xl p-6 hover:shadow-md transition-shadow group flex flex-col h-full bg-slate-50 hover:bg-white">
                     <div className="flex-grow">
                       <h3 className="text-xl font-medium text-slate-900 mb-2 group-hover:text-sky-600 transition-colors">{pkg.name}</h3>
-                      <p className="text-slate-500 text-sm mb-4 line-clamp-3">{pkg.description}</p>
+                      <p className="text-slate-500 text-sm mb-4 max-h-32 overflow-y-auto pr-2">{pkg.description}</p>
                       {pkg.capacity !== undefined && pkg.capacity > 0 && (
                         <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-4">
                           <Users className="w-3 h-3" />

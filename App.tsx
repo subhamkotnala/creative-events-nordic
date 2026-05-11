@@ -203,7 +203,7 @@ const AppContent: React.FC = () => {
             <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">Marketplace</Link>
             <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">Our Vendors</Link>
             {user?.role !== 'VENDOR' && (
-              <Link to="/join" className="hover:text-slate-900 transition-colors py-1">Join Marketplace</Link>
+              <Link to="/join" className="hover:text-slate-900 transition-colors py-1">Join us</Link>
             )}
           </div>
 
