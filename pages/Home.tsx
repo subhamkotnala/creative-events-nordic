@@ -51,9 +51,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
   const CATEGORIES_DATA = [
     { name: VendorCategory.VENUES, icon: Building2, color: 'text-blue-500/80', hoverBg: 'hover:bg-blue-50/40', accent: 'bg-blue-400', image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80&w=800" },
     { name: VendorCategory.PHOTOGRAPHY, icon: Camera, color: 'text-emerald-500/80', hoverBg: 'hover:bg-emerald-50/40', accent: 'bg-emerald-400', image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800" },
-    { name: VendorCategory.MUSIC, icon: Music, color: 'text-rose-500/80', hoverBg: 'hover:bg-rose-50/40', accent: 'bg-rose-400', image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800" },
     { name: VendorCategory.CATERING, icon: UtensilsCrossed, color: 'text-amber-500/80', hoverBg: 'hover:bg-amber-50/40', accent: 'bg-amber-400', image: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=800" },
-    { name: VendorCategory.DECOR, icon: Flower, color: 'text-indigo-500/80', hoverBg: 'hover:bg-indigo-50/40', accent: 'bg-indigo-400', image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=800" },
     { name: VendorCategory.EVENT_PLANNERS, icon: ClipboardList, color: 'text-violet-500/80', hoverBg: 'hover:bg-violet-50/40', accent: 'bg-violet-400', image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800" },
   ];
 
@@ -149,7 +147,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                   <span className="inline-block px-6 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-[0.3em] mb-8 shadow-lg">
                     {SLIDES[currentSlide].subtitle}
                   </span>
-                  <h1 className="text-5xl md:text-7xl lg:text-8xl text-white mb-12 leading-tight serif italic drop-shadow-2xl">
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl text-white mb-12 leading-tight serif italic drop-shadow-2xl">
                     {SLIDES[currentSlide].title}
                   </h1>
                </motion.div>
@@ -235,9 +233,9 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
       </section>
 
       {/* Categories Section - Minimalist Image Cards */}
-      <section className="bg-white py-32 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+      <section className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
             <div className="max-w-2xl">
               <h2 className="text-4xl md:text-5xl serif mb-4">
                 {t('home.categoriesTitle')}
@@ -251,7 +249,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {CATEGORIES_DATA.map((cat, idx) => (
               <motion.div
                 key={cat.name}
@@ -262,7 +260,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
               >
                 <Link 
                   to={`/explore?category=${cat.name}`}
-                  className="group block relative aspect-square w-[90%] mx-auto overflow-hidden rounded-[1.5rem] bg-slate-100"
+                  className="group block relative aspect-square w-full mx-auto overflow-hidden rounded-[1.5rem] bg-slate-100"
                 >
                   <img 
                     src={cat.image}
@@ -275,10 +273,10 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                   
                   <div className="absolute inset-0 p-8 flex flex-col justify-end">
                     <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-6 border border-white/20">
-                        <cat.icon className="w-5 h-5 text-white" />
+                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 border border-white/20">
+                        <cat.icon className="w-4 h-4 text-white" />
                       </div>
-                      <h3 className="text-3xl text-white serif tracking-wide mb-2">
+                      <h3 className="text-xl md:text-2xl text-white serif tracking-wide mb-2">
                         {t(`categories.${cat.name}`)}
                       </h3>
                       <div className="overflow-hidden">
@@ -295,8 +293,187 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
         </div>
       </section>
 
-      <section className="bg-white py-24 border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4">
+      {/* How It Works Section */}
+      <section className="bg-slate-50 py-20">
+        <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
+          <h2 className="text-4xl serif mb-16 text-slate-900">{language === 'sv' ? 'Så fungerar det' : 'How it Works'}</h2>
+          <div className="grid md:grid-cols-3 gap-16">
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
+                <Search className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl serif italic text-slate-900">{language === 'sv' ? '1. Hitta' : '1. Find'}</h3>
+              <p className="text-slate-500 font-light leading-relaxed">
+                {language === 'sv' ? 'Sök igenom Sveriges största urval av lokaler och tjänster för ditt evenemang.' : 'Search through Sweden\'s largest selection of event spaces and services for your event.'}
+              </p>
+            </div>
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
+                <Send className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl serif italic text-slate-900">{language === 'sv' ? '2. Kontakta' : '2. Connect'}</h3>
+              <p className="text-slate-500 font-light leading-relaxed">
+                {language === 'sv' ? 'Skicka förfrågningar direkt till leverantörer och få de bästa erbjudandena.' : 'Send inquiries directly to providers and get the best offers.'}
+              </p>
+            </div>
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
+                <HeartHandshake className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl serif italic text-slate-900">{language === 'sv' ? '3. Fira' : '3. Celebrate'}</h3>
+              <p className="text-slate-500 font-light leading-relaxed">
+                {language === 'sv' ? 'Boka den perfekta matchen och anordna ett oförglömligt evenemang.' : 'Book the perfect match and host an unforgettable event.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Values Section */}
+      <section className="bg-white text-slate-900 py-20 overflow-hidden relative border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="space-y-12">
+              <div className="space-y-4">
+                <h2 className="text-5xl serif italic leading-tight text-slate-900">{t('home.valuesTitle')}</h2>
+                <p className="text-slate-500 font-light text-xl leading-relaxed">
+                  {t('home.valuesSub')}
+                </p>
+              </div>
+              
+              <div className="grid sm:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-900">
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">{t('home.vettedTitle')}</h3>
+                  <p className="text-slate-500 text-sm font-light leading-relaxed">{t('home.vettedSub')}</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-900">
+                    <Layout className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">{t('home.optionsTitle')}</h3>
+                  <p className="text-slate-500 text-sm font-light leading-relaxed">{t('home.optionsSub')}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-100 p-12 rounded-[3rem] shadow-xl">
+                <h3 className="text-2xl serif mb-6 text-slate-900">{t('home.contactTitle')}</h3>
+                {formSubmitted ? (
+                  <div className="py-12 text-center animate-fade-in">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Star className="w-8 h-8 text-slate-900" fill="currentColor" />
+                    </div>
+                    <p className="text-slate-900 serif text-xl italic">{t('home.successTitle')}</p>
+                    <p className="text-slate-400 text-[10px] mt-4 uppercase tracking-widest font-bold">{t('home.successBadge')}</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleContactSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.visionLabel')}</label>
+                      <input 
+                        type="text" required
+                        value={contactForm.vision}
+                        onChange={(e) => setContactForm({...contactForm, vision: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                        placeholder={t('home.visionPlaceholder')} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.emailLabel')}</label>
+                       <input 
+                         type="email" required
+                         value={contactForm.email}
+                         onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                         placeholder="your@email.com" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone Number</label>
+                       <input 
+                         type="tel" required
+                         value={contactForm.phone}
+                         onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
+                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                         placeholder="+46 70 123 45 67" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Antal gäster' : 'Guest Capacity'}</label>
+                       <input 
+                         type="number" required
+                         value={contactForm.capacity}
+                         onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
+                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                         placeholder="e.g. 150" 
+                       />
+                    </div>
+                    <button 
+                      type="submit"
+                      disabled={isSending}
+                      className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50"
+                    >
+                      {isSending ? 'Sending...' : t('home.sendRequest')}
+                    </button>
+                  </form>
+                )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Showcase Grid */}
+      <section className="bg-slate-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+            <div className="max-w-xl">
+              <h2 className="text-4xl serif mb-4">{t('home.featuredTitle')}</h2>
+              <p className="text-slate-500 font-light">{t('home.featuredSub')}</p>
+            </div>
+            <Link to="/explore" className="text-slate-900 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 border-b-2 border-slate-900 pb-1 hover:text-slate-600 hover:border-slate-600 transition-colors">
+              {t('home.viewAll')} <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredPartners.length > 0 ? (
+              featuredPartners.map(vendor => {
+                const primaryService = vendor.services?.[0];
+                return (
+                <Link key={vendor.id} to={`/vendors/${vendor.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="bg-white rounded-[2.5rem] overflow-hidden group shadow-sm hover:shadow-xl transition-all border border-slate-100">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img 
+                      src={primaryService?.imageUrl || primaryService?.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      alt={vendor.name}
+                    />
+                  </div>
+                  <div className="p-8">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-800 font-bold mb-2">{primaryService?.category ? t(`categories.${primaryService.category}`) : ''}</p>
+                    <h3 className="text-xl serif mb-2 truncate">{vendor.name}</h3>
+                    <p className="text-slate-500 text-sm font-light leading-relaxed mb-6 line-clamp-2">{primaryService?.description}</p>
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-4 border-t border-slate-100">
+                      <span>{vendor.applicationLocation || primaryService?.location}</span>
+                      <span className="text-slate-800">Featured</span>
+                    </div>
+                  </div>
+                </Link>
+                );
+              })
+            ) : (
+              <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
+                <p className="text-slate-400 italic serif text-xl">Our featured selection is updated weekly. Check back soon!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-12 gap-16 items-center">
             <div className="lg:col-span-5 relative min-h-[480px] rounded-[3.5rem] overflow-hidden group">
               <img 
@@ -365,186 +542,6 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                   </motion.div>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Showcase Grid */}
-      <section className="bg-slate-50 py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-            <div className="max-w-xl">
-              <h2 className="text-4xl serif mb-4">{t('home.featuredTitle')}</h2>
-              <p className="text-slate-500 font-light">{t('home.featuredSub')}</p>
-            </div>
-            <Link to="/explore" className="text-sky-600 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 border-b-2 border-sky-600 pb-1 hover:border-sky-400 transition-colors">
-              {t('home.viewAll')} <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredPartners.length > 0 ? (
-              featuredPartners.map(vendor => {
-                const primaryService = vendor.services?.[0];
-                return (
-                <Link key={vendor.id} to={`/vendors/${vendor.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="bg-white rounded-[2.5rem] overflow-hidden group shadow-sm hover:shadow-xl transition-all border border-slate-100">
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img 
-                      src={primaryService?.imageUrl || primaryService?.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                      alt={vendor.name}
-                    />
-                  </div>
-                  <div className="p-8">
-                    <p className="text-[10px] uppercase tracking-widest text-sky-600 font-bold mb-2">{primaryService?.category ? t(`categories.${primaryService.category}`) : ''}</p>
-                    <h3 className="text-xl serif mb-2 truncate">{vendor.name}</h3>
-                    <p className="text-slate-500 text-sm font-light leading-relaxed mb-6 line-clamp-2">{primaryService?.description}</p>
-                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-4 border-t border-slate-50">
-                      <span>{vendor.applicationLocation || primaryService?.location}</span>
-                      <span className="text-sky-700">Featured</span>
-                    </div>
-                  </div>
-                </Link>
-                );
-              })
-            ) : (
-              <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
-                <p className="text-slate-400 italic serif text-xl">Our featured selection is updated weekly. Check back soon!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="bg-white py-24">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h2 className="text-4xl serif mb-16">{language === 'sv' ? 'Så fungerar det' : 'How it Works'}</h2>
-          <div className="grid md:grid-cols-3 gap-16">
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500/80">
-                <Search className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl serif italic">{language === 'sv' ? '1. Hitta' : '1. Find'}</h3>
-              <p className="text-slate-500 font-light leading-relaxed">
-                {language === 'sv' ? 'Sök igenom Sveriges största urval av lokaler och tjänster för ditt evenemang.' : 'Search through Sweden\'s largest selection of event spaces and services for your event.'}
-              </p>
-            </div>
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-500/80">
-                <Send className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl serif italic">{language === 'sv' ? '2. Kontakta' : '2. Connect'}</h3>
-              <p className="text-slate-500 font-light leading-relaxed">
-                {language === 'sv' ? 'Skicka förfrågningar direkt till leverantörer och få de bästa erbjudandena.' : 'Send inquiries directly to providers and get the best offers.'}
-              </p>
-            </div>
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500/80">
-                <HeartHandshake className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl serif italic">{language === 'sv' ? '3. Fira' : '3. Celebrate'}</h3>
-              <p className="text-slate-500 font-light leading-relaxed">
-                {language === 'sv' ? 'Boka den perfekta matchen och anordna ett oförglömligt evenemang.' : 'Book the perfect match and host an unforgettable event.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="bg-slate-900 text-white py-24 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500 rounded-full blur-[120px] opacity-10 -mr-48 -mt-48"></div>
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-12">
-              <div className="space-y-4">
-                <h2 className="text-5xl serif italic leading-tight">{t('home.valuesTitle')}</h2>
-                <p className="text-slate-400 font-light text-xl leading-relaxed">
-                  {t('home.valuesSub')}
-                </p>
-              </div>
-              
-              <div className="grid sm:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-sky-400">
-                    <Shield className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-bold">{t('home.vettedTitle')}</h3>
-                  <p className="text-slate-500 text-sm font-light leading-relaxed">{t('home.vettedSub')}</p>
-                </div>
-                <div className="space-y-4">
-                  <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-sky-400">
-                    <Layout className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-bold">{t('home.optionsTitle')}</h3>
-                  <p className="text-slate-500 text-sm font-light leading-relaxed">{t('home.optionsSub')}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-12 rounded-[3rem] shadow-2xl">
-                <h3 className="text-2xl serif mb-6">{t('home.contactTitle')}</h3>
-                {formSubmitted ? (
-                  <div className="py-12 text-center animate-fade-in">
-                    <div className="w-16 h-16 bg-sky-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Star className="w-8 h-8 text-sky-400" fill="currentColor" />
-                    </div>
-                    <p className="text-white serif text-xl italic">{t('home.successTitle')}</p>
-                    <p className="text-slate-400 text-[10px] mt-4 uppercase tracking-widest font-bold">{t('home.successBadge')}</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleContactSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.visionLabel')}</label>
-                      <input 
-                        type="text" required
-                        value={contactForm.vision}
-                        onChange={(e) => setContactForm({...contactForm, vision: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
-                        placeholder={t('home.visionPlaceholder')} 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.emailLabel')}</label>
-                      <input 
-                        type="email" required
-                        value={contactForm.email}
-                        onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
-                        placeholder="your@email.com" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone Number</label>
-                      <input 
-                        type="tel" required
-                        value={contactForm.phone}
-                        onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
-                        placeholder="+46 70 123 45 67" 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Antal gäster' : 'Guest Capacity'}</label>
-                      <input 
-                        type="number" required
-                        value={contactForm.capacity}
-                        onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-sky-500 outline-none text-white placeholder:text-slate-700" 
-                        placeholder="e.g. 150" 
-                      />
-                    </div>
-                    <button 
-                      type="submit"
-                      disabled={isSending}
-                      className="w-full bg-sky-600 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-white hover:text-slate-900 transition-all shadow-xl shadow-sky-950 disabled:opacity-50"
-                    >
-                      {isSending ? 'Sending...' : t('home.sendRequest')}
-                    </button>
-                  </form>
-                )}
             </div>
           </div>
         </div>
