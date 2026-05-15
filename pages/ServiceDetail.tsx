@@ -26,6 +26,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
   const historyStack: string[] = location.state?.history || ['/explore'];
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [inquirySent, setInquirySent] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', message: '' });
   const [showCalendar, setShowCalendar] = useState(false);
@@ -78,7 +79,9 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
         user_email: formData.email,
         user_phone: formData.phone || 'Not provided',
         event_date: formData.date || 'Not specified',
-        message: formData.message,
+        message: selectedPackage 
+          ? `Package: ${selectedPackage.name}\n\nPrice: ${selectedPackage.price} SEK\n\n${formData.message}`
+          : formData.message,
       };
 
       await emailjs.send(
@@ -147,29 +150,49 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
       {/* Inquiry Modal */}
       {isModalOpen && vendor && service && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => { setIsModalOpen(false); setSelectedPackage(null); }} />
           <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="bg-white rounded-[2rem] shadow-2xl w-full h-full relative overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
               
               {/* Header Section */}
-              <div className="relative h-32 bg-slate-900 overflow-hidden flex-shrink-0">
+              <div className="relative h-40 bg-slate-900 overflow-hidden flex-shrink-0">
                 <img src={service.imageUrl || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-40" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                 <button 
-                  onClick={() => setIsModalOpen(false)} 
+                  onClick={() => { setIsModalOpen(false); setSelectedPackage(null); }} 
                   className="absolute top-4 right-4 p-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all backdrop-blur-md z-10"
                 >
                   <X className="w-5 h-5" />
                 </button>
                 <div className="absolute bottom-6 left-8 right-8">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400 mb-2 block">{t('vendorDetail.connectWith')}</span>
-                  <h2 className="text-2xl serif text-white leading-tight truncate">{vendor.name}</h2>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400 mb-2 block">
+                    {selectedPackage ? 'PACKAGE INQUIRY' : t('vendorDetail.connectWith')}
+                  </span>
+                  <h2 className="text-2xl md:text-3xl serif text-white leading-tight truncate">
+                    {selectedPackage ? selectedPackage.name : vendor.name}
+                  </h2>
                 </div>
               </div>
 
               {/* Form Section */}
               <div className="p-8 overflow-y-auto custom-scrollbar">
-                <p className="text-slate-500 text-xs font-medium mb-6 leading-relaxed">
+                {selectedPackage && (
+                  <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="text-sm font-bold text-slate-800">{selectedPackage.name}</h4>
+                      <span className="text-sm font-bold text-sky-600">{selectedPackage.price.toLocaleString()} SEK</span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-light mb-3">{selectedPackage.description}</p>
+                    {selectedPackage.capacity && (
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <Users className="w-3.5 h-3.5" />
+                        {selectedPackage.capacity} {language === 'sv' ? 'Gäster' : 'Guests'}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <p className="text-slate-500 text-[11px] font-medium mb-6 leading-relaxed">
                   {t('vendorDetail.inquirySub')}
                 </p>
                 
@@ -504,22 +527,29 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
           {/* Packages */}
           {service.packages && service.packages.length > 0 && (
             <div className="mb-12">
-              <h2 className="text-2xl serif text-slate-800 mb-6">Available Packages</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <h2 className="text-3xl serif text-slate-800 mb-8">Available Packages</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {service.packages.map(pkg => (
-                  <div key={pkg.id} className="border border-slate-200 rounded-2xl p-6 hover:shadow-md transition-shadow group flex flex-col h-full bg-slate-50 hover:bg-white">
+                  <div 
+                    key={pkg.id} 
+                    onClick={() => { setSelectedPackage(pkg); setIsModalOpen(true); }}
+                    className="border border-slate-100 rounded-[2rem] p-8 transition-all group flex flex-col h-full bg-slate-50/50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 cursor-pointer border-transparent hover:border-slate-200 relative overflow-hidden"
+                  >
                     <div className="flex-grow">
-                      <h3 className="text-xl font-medium text-slate-900 mb-2 group-hover:text-sky-600 transition-colors">{pkg.name}</h3>
-                      <p className="text-slate-500 text-sm mb-4 max-h-32 overflow-y-auto pr-2">{pkg.description}</p>
-                      {pkg.capacity !== undefined && pkg.capacity > 0 && (
-                        <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-4">
-                          <Users className="w-3 h-3" />
-                          <span>{pkg.capacity} {language === 'sv' ? 'Gäster' : 'Guests'}</span>
-                        </div>
-                      )}
+                      <h3 className="text-3xl serif text-slate-900 mb-4 group-hover:text-sky-600 transition-colors">{pkg.name}</h3>
+                      <p className="text-slate-500 text-sm mb-6 font-light leading-relaxed line-clamp-3">{pkg.description}</p>
+                      
+                      <div className="flex items-center gap-4">
+                        {pkg.capacity !== undefined && pkg.capacity > 0 && (
+                          <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                            <Users className="w-4 h-4 text-sky-500" />
+                            <span>{pkg.capacity} {language === 'sv' ? 'Gäster' : 'Guests'}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
-                       <span className="text-lg font-bold text-slate-900">{pkg.price} SEK</span>
+                    <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-end">
+                       <span className="text-2xl font-black text-slate-900 tracking-tight group-hover:scale-105 transition-transform">{pkg.price.toLocaleString()} <span className="text-sm font-bold uppercase ml-1">SEK</span></span>
                     </div>
                   </div>
                 ))}

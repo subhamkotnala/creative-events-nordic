@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Instagram, Facebook, Send, X, CheckCircle2, Music, Loader2, User, MessageSquare, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Mail, Calendar, ArrowLeft, Instagram, Facebook, Send, X, CheckCircle2, Music, Loader2, User, MessageSquare, Globe, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,6 +30,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   const vendor = vendors.find(v => v.id === id);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [inquirySent, setInquirySent] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', message: '' });
   const [showCalendar, setShowCalendar] = useState(false);
@@ -115,7 +116,9 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
         user_email: formData.email,
         user_phone: formData.phone || 'Not provided',
         event_date: formData.date || 'Not specified',
-        message: formData.message,
+        message: selectedPackage 
+          ? `Package: ${selectedPackage.name}\n\nPrice: ${selectedPackage.price} SEK\n\n${formData.message}`
+          : formData.message,
       };
 
       await emailjs.send(
@@ -167,29 +170,49 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
     <div className="pb-24">
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => { setIsModalOpen(false); setSelectedPackage(null); }} />
           <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="bg-white rounded-[2rem] shadow-2xl w-full h-full relative overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
               
               {/* Header Section */}
-              <div className="relative h-32 bg-slate-900 overflow-hidden flex-shrink-0">
+              <div className="relative h-40 bg-slate-900 overflow-hidden flex-shrink-0">
                 <img src={vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} className="w-full h-full object-cover opacity-40" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                 <button 
-                  onClick={() => setIsModalOpen(false)} 
+                  onClick={() => { setIsModalOpen(false); setSelectedPackage(null); }} 
                   className="absolute top-4 right-4 p-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all backdrop-blur-md z-10"
                 >
                   <X className="w-5 h-5" />
                 </button>
                 <div className="absolute bottom-6 left-8 right-8">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400 mb-2 block">{t('vendorDetail.connectWith')}</span>
-                  <h2 className="text-2xl serif text-white leading-tight truncate">{vendor.name}</h2>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400 mb-2 block">
+                    {selectedPackage ? 'PACKAGE INQUIRY' : t('vendorDetail.connectWith')}
+                  </span>
+                  <h2 className="text-2xl md:text-3xl serif text-white leading-tight truncate">
+                    {selectedPackage ? selectedPackage.name : vendor.name}
+                  </h2>
                 </div>
               </div>
 
               {/* Form Section */}
               <div className="p-8 overflow-y-auto custom-scrollbar">
-                <p className="text-slate-500 text-xs font-medium mb-6 leading-relaxed">
+                {selectedPackage && (
+                  <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="text-sm font-bold text-slate-800">{selectedPackage.name}</h4>
+                      <span className="text-sm font-bold text-sky-600">{selectedPackage.price.toLocaleString()} SEK</span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-light mb-3">{selectedPackage.description}</p>
+                    {selectedPackage.capacity && (
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <Users className="w-3.5 h-3.5 text-slate-400" />
+                        {selectedPackage.capacity} {language === 'sv' ? 'Gäster' : 'Guests'}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <p className="text-slate-500 text-[11px] font-medium mb-6 leading-relaxed">
                   {t('vendorDetail.inquirySub')}
                 </p>
                 
@@ -448,7 +471,13 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
               </span>
               <h1 className="text-6xl serif mb-6 leading-tight">{vendor.name}</h1>
               <div className="flex flex-wrap items-center gap-8 text-xs font-bold uppercase tracking-widest text-slate-400 mb-10">
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><MapPin className="w-4 h-4 text-sky-500" /> {vendor.applicationLocation || vendor.services?.[0]?.location}</span>
+                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
+                  <MapPin className="w-4 h-4 text-sky-500" /> 
+                  {Array.from(new Set([
+                    vendor.applicationLocation,
+                    ...(vendor.services?.map(s => s.location) || [])
+                  ].filter(Boolean))).join(', ')}
+                </span>
                 <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><Calendar className="w-4 h-4 text-sky-500" /> Member since {vendor.joinedAt.split('-')[0]}</span>
                 <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><MessageSquare className="w-4 h-4 text-sky-500" /> {vendor.inquiries || 0} Inquiries</span>
               </div>
@@ -500,15 +529,28 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                       <p className="text-slate-500 text-sm leading-relaxed mb-6 font-light">{service.description}</p>
                       
                       {service.packages && service.packages.length > 0 && (
-                        <div className="space-y-4 mb-8">
-                           <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Packages</h4>
+                        <div className="space-y-6 mb-8 mt-4">
+                           <h4 className="text-[11px] uppercase font-bold text-slate-400 tracking-[0.2em]">Available Packages</h4>
                            {service.packages.map(pkg => (
-                              <div key={pkg.id} className="bg-slate-50 p-4 rounded-2xl flex flex-col items-start gap-2">
+                              <div 
+                                key={pkg.id} 
+                                onClick={() => { setSelectedPackage(pkg); setIsModalOpen(true); }}
+                                className="bg-slate-50/50 p-6 rounded-[2rem] flex flex-col items-start gap-3 border border-transparent hover:border-slate-200 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer group"
+                              >
                                  <div className="flex justify-between items-start w-full">
-                                   <div className="text-xs font-bold text-slate-700">{pkg.name}</div>
-                                   <div className="text-[10px] font-bold text-sky-600 flex-shrink-0 ml-4">{pkg.price.toLocaleString()} SEK</div>
+                                   <div className="text-2xl serif text-slate-800 group-hover:text-sky-600 transition-colors">{pkg.name}</div>
                                  </div>
-                                 <div className="text-[10px] text-slate-500 max-h-24 overflow-y-auto pr-2 w-full">{pkg.description}</div>
+                                 <p className="text-sm text-slate-500 font-light leading-relaxed line-clamp-2 w-full">{pkg.description}</p>
+                                 
+                                 <div className="flex justify-between items-center w-full mt-2">
+                                   {pkg.capacity !== undefined && pkg.capacity > 0 && (
+                                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                       <Users className="w-4 h-4 text-sky-500" />
+                                       <span>{pkg.capacity} {language === 'sv' ? 'Gäster' : 'Guests'}</span>
+                                     </div>
+                                   )}
+                                   <div className="text-xl font-black text-slate-900 ml-auto">{pkg.price.toLocaleString()} <span className="text-[10px] font-bold uppercase ml-1">SEK</span></div>
+                                 </div>
                               </div>
                            ))}
                         </div>

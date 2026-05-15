@@ -456,8 +456,16 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                     <h3 className="text-xl serif mb-2 truncate">{vendor.name}</h3>
                     <p className="text-slate-500 text-sm font-light leading-relaxed mb-6 line-clamp-2">{primaryService?.description}</p>
                     <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-4 border-t border-slate-100">
-                      <span>{vendor.applicationLocation || primaryService?.location}</span>
-                      <span className="text-slate-800">Featured</span>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {Array.from(new Set([
+                            vendor.applicationLocation,
+                            ...(vendor.services?.map(s => s.location) || [])
+                          ].filter(Boolean))).join(', ')}
+                        </span>
+                      </div>
+                      <span className="text-slate-800 flex-shrink-0 ml-2">Featured</span>
                     </div>
                   </div>
                 </Link>
