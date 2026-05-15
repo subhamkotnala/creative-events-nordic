@@ -160,7 +160,13 @@ const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
                   {activeService?.description || vendor.applicationStory || vendor.services?.[0]?.description}
                 </p>
                 <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                  <MapPin className="w-3 h-3" /> {vendor.applicationLocation || activeService?.location || vendor.services?.[0]?.location}
+                  <MapPin className="w-3 h-3" /> 
+                  <span className="truncate">
+                    {Array.from(new Set([
+                      vendor.applicationLocation,
+                      ...(vendor.services?.map(s => s.location) || [])
+                    ].filter(Boolean))).join(', ')}
+                  </span>
                 </div>
               </div>
             </Link>
