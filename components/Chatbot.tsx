@@ -57,7 +57,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
 
     try {
       const getApiKey = () => {
-        const key = process.env.GEMINI_API_KEY;
+        const key = import.meta.env.VITE_GEMINI_API_KEY;
         if (!key || key === 'undefined' || key.includes('failed to load')) return null;
         return key;
       };
