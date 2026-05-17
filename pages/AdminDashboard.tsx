@@ -81,7 +81,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Partial<Vendor> | null>(null);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [editingServiceIdx, setEditingServiceIdx] = useState<number | null>(null);
+  const [tempService, setTempService] = useState<VendorService | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<{title: string, message: string} | null>(null);
   const [isApproving, setIsApproving] = useState(false); // Loader state for approval
   const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
@@ -192,11 +195,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Admin image upload disabled. Vendors manage this in their own dashboard
+    if (e.target.files && e.target.files[0] && editingVendor) {
+      setIsProcessingImages(true);
+      try {
+        const compressed = await compressImage(e.target.files[0], 1000, 600, 0.5);
+        setEditingVendor({ ...editingVendor, applicationImageUrl: compressed });
+        setNotifications(prev => [`System: Updated header image for ${editingVendor.name}`, ...prev]);
+      } catch (err) {
+        console.error("Image processing failed", err);
+      } finally {
+        setIsProcessingImages(false);
+      }
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Admin gallery upload disabled. Vendors manage this in their own dashboard
+    if (e.target.files && editingVendor) {
+      setIsProcessingImages(true);
+      const files = Array.from(e.target.files) as File[];
+      const compressedImages: string[] = [];
+      const currentImages = editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls || [];
+      
+      for (const file of files) {
+        try {
+          const compressed = await compressImage(file, 600, 600, 0.4);
+          compressedImages.push(compressed);
+        } catch (err) {
+          console.error("Gallery image processing failed", err);
+        }
+      }
+      
+      setEditingVendor({ 
+        ...editingVendor, 
+        applicationGalleryUrls: [...currentImages, ...compressedImages].slice(0, 12) 
+      });
+      setIsProcessingImages(false);
+    }
   };
 
   const handleDelete = (vendor: Vendor) => {
@@ -216,34 +250,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
-  const handleSaveVendor = () => {
+  const handleSaveVendor = async () => {
     if (!editingVendor?.name || !editingVendor?.email) {
       alert('Please fill in required fields (Name, Email).');
       return;
     }
 
-    if (editingVendor.id) {
-      onUpdateVendor(editingVendor as Vendor);
-      setNotifications(prev => [`System: Updated ${editingVendor.name}`, ...prev]);
-      setActionSuccess({
-        title: 'Editing Completed',
-        message: `The profile for ${editingVendor.name} has been successfully updated.`
-      });
-    } else {
-      const newVendor: Vendor = {
-        ...(editingVendor as Vendor),
-        // FIX: Prefix ID with 'app-' to be consistent with application IDs
-        id: `app-${Date.now()}`,
-      };
-      onAddVendor(newVendor);
-      setNotifications(prev => [`System: New partner ${newVendor.name} added to queue`, ...prev]);
-      setActionSuccess({
-        title: 'Partner Added',
-        message: `${newVendor.name} has been successfully added to the system.`
-      });
+    setIsSubmitting(true);
+    try {
+      if (editingVendor.id) {
+        await onUpdateVendor(editingVendor as Vendor);
+        setNotifications(prev => [`System: Admin updated ${editingVendor.name}'s profile`, ...prev]);
+        setActionSuccess({
+          title: 'Editing Completed',
+          message: `The profile for ${editingVendor.name} has been successfully updated.`
+        });
+      } else {
+        const newVendor: Vendor = {
+          ...(editingVendor as Vendor),
+          id: `app-${Date.now()}`,
+        };
+        await onAddVendor(newVendor);
+        setNotifications(prev => [`System: New partner ${newVendor.name} added by Admin`, ...prev]);
+        setActionSuccess({
+          title: 'Partner Added',
+          message: `${newVendor.name} has been successfully added to the system.`
+        });
+      }
+      setIsModalOpen(false);
+      setEditingVendor(null);
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert("Save failed: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsModalOpen(false);
-    setEditingVendor(null);
   };
 
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
@@ -474,9 +515,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex-grow overflow-y-auto p-10 space-y-12 custom-scrollbar">
                 {/* Header Branding */}
                 <div className="space-y-4">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Header Branding Photo (Managed by Vendor)</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Header Branding Photo</label>
+                    <label className="cursor-pointer bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center gap-2">
+                       <Camera className="w-3.5 h-3.5" /> Change Photo
+                       <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    </label>
+                  </div>
                   <div className="relative w-full aspect-[21/9] bg-slate-100 rounded-3xl overflow-hidden group border border-slate-100 shadow-inner">
-                    <img src={editingVendor.services?.[0]?.imageUrl} className="w-full h-full object-cover" alt="" />
+                    <img src={editingVendor.applicationImageUrl || editingVendor.services?.[0]?.imageUrl} className="w-full h-full object-cover" alt="" />
+                    {isProcessingImages && (
+                      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -493,6 +545,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
                     <input type="tel" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-1 focus:ring-sky-500" value={editingVendor.phone || ''} onChange={e => setEditingVendor({...editingVendor, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Main Region</label>
+                    <select 
+                      className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-1 focus:ring-sky-500" 
+                      value={editingVendor.applicationLocation || ''} 
+                      onChange={e => setEditingVendor({...editingVendor, applicationLocation: e.target.value})}
+                    >
+                      <option value="">Select Region</option>
+                      {AVAILABLE_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Business Story / Bio</label>
+                    <textarea 
+                      className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm outline-none focus:ring-1 focus:ring-sky-500 min-h-[120px] resize-none" 
+                      value={editingVendor.applicationStory || ''} 
+                      onChange={e => setEditingVendor({...editingVendor, applicationStory: e.target.value})}
+                      placeholder="Tell the story behind your business..."
+                    />
                   </div>
                 </div>
 
@@ -515,43 +587,108 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* PHOTO GALLERY (MANAGED BY VENDOR) */}
+                {/* PHOTO GALLERY */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Portfolio Gallery (Managed by Vendor)</h4>
-                    <span className="text-[9px] text-slate-300 italic">Click to expand</span>
+                    <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Portfolio Gallery</h4>
+                    <label className="cursor-pointer bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all flex items-center gap-2">
+                       <PlusCircle className="w-3.5 h-3.5" /> Add Photos
+                       <input type="file" multiple className="hidden" accept="image/*" onChange={handleGalleryUpload} />
+                    </label>
                   </div>
                   <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4">
                     {(editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls)?.map((url, i) => (
                       <div 
                         key={i} 
-                        onClick={() => {
-                          setActiveGallery({ images: (editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls) || [], initialIndex: i });
-                          setCurrentImageIndex(i);
-                        }}
-                        className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group cursor-pointer hover:ring-2 hover:ring-sky-500/30 transition-all"
+                        className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group shadow-sm"
                       >
-                        <img src={url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                        <img 
+                          src={url} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-pointer" 
+                          alt="" 
+                          onClick={() => {
+                            setActiveGallery({ images: (editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls) || [], initialIndex: i });
+                            setCurrentImageIndex(i);
+                          }}
+                        />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const currentGallery = editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls || [];
+                            const updated = currentGallery.filter((_, idx) => idx !== i);
+                            setEditingVendor({
+                              ...editingVendor,
+                              applicationGalleryUrls: updated
+                            });
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-white/90 text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
+                    {(!(editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls) || (editingVendor.applicationGalleryUrls || editingVendor.services?.[0]?.imageUrls)?.length === 0) && (
+                      <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-[2rem] flex flex-col items-center justify-center text-slate-300">
+                        <ImageIcon className="w-8 h-8 mb-4 opacity-20" />
+                        <p className="text-[10px] font-bold uppercase tracking-widest italic">No gallery photos added.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* SERVICES MANIFEST (READ ONLY IN ADMIN) */}
+                {/* SERVICES MANIFEST (EDITABLE IN ADMIN) */}
                 <div className="space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                     <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Service Offerings</h4>
+                    <button 
+                      onClick={() => {
+                        setTempService({
+                          id: Date.now().toString(),
+                          category: VendorCategory.PHOTOGRAPHY,
+                          location: AVAILABLE_LOCATIONS[0],
+                          description: '',
+                          packages: [],
+                          imageUrls: []
+                        });
+                        setEditingServiceIdx(-1);
+                      }}
+                      className="bg-slate-50 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-2"
+                    >
+                      <Plus className="w-3 h-3" /> Add Category
+                    </button>
                   </div>
                   {editingVendor.services && editingVendor.services.length > 0 ? (
                     <div className="grid sm:grid-cols-2 gap-4">
                       {editingVendor.services.map((s, idx) => (
-                        <div key={s.id || idx} className="flex flex-col gap-2 p-5 bg-slate-50 rounded-3xl border border-slate-100 relative">
+                        <div key={s.id || idx} className="flex flex-col gap-2 p-5 bg-slate-50 rounded-3xl border border-slate-100 relative group">
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600">{s.category}</span>
-                              <span className="text-[10px] font-bold text-slate-400">{s.location}</span>
+                              <div className="flex items-center gap-1">
+                                <button 
+                                  onClick={() => {
+                                    setTempService({...s});
+                                    setEditingServiceIdx(idx);
+                                  }}
+                                  className="p-1.5 text-slate-300 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    const updated = editingVendor.services?.filter((_, i) => i !== idx);
+                                    setEditingVendor({...editingVendor, services: updated});
+                                  }}
+                                  className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] font-bold text-slate-400 capitalize">{s.location}</span>
                             </div>
                             {s.imageUrls && s.imageUrls.length > 0 && (
-                              <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+                              <div className="flex gap-2 overflow-x-auto pb-2 mb-2 custom-scrollbar">
                                 {s.imageUrls.map((url, i) => (
                                   <div 
                                     key={url} 
@@ -559,14 +696,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                       setActiveGallery({ images: s.imageUrls || [], initialIndex: i });
                                       setCurrentImageIndex(i);
                                     }}
-                                    className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer shadow-sm"
+                                    className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer shadow-sm border border-slate-100"
                                   >
                                     <img src={url} className="w-full h-full object-cover" alt="" />
                                   </div>
                                 ))}
                               </div>
                             )}
-                            <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-3">{s.description}</p>
+                            <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{s.description}</p>
                             {s.packages && s.packages.length > 0 && (
                               <div className="mt-3 space-y-2">
                                 {s.packages.map(pkg => (
@@ -589,11 +726,231 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="p-8 border-t border-slate-100 flex gap-4 bg-slate-50/50">
-                <button onClick={handleSaveVendor} disabled={isProcessingImage} className="flex-grow bg-slate-900 text-white font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl disabled:opacity-50">
-                  {isProcessingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {editingVendor.id ? 'Save Changes' : 'Confirm & Add to Queue'}
+                <button onClick={handleSaveVendor} disabled={isProcessingImages} className="flex-grow bg-slate-900 text-white font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl disabled:opacity-50">
+                  {isProcessingImages ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {editingVendor.id ? 'Save Changes' : 'Confirm & Add to Queue'}
                 </button>
                 <button onClick={() => setIsModalOpen(false)} className="px-10 py-5 bg-white border border-slate-200 text-slate-400 font-bold rounded-2xl text-[10px] uppercase tracking-[0.2em]">Cancel</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Service Modal (Nested) */}
+      {editingServiceIdx !== null && tempService && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h3 className="text-2xl serif text-slate-900">
+                  {editingServiceIdx === -1 ? 'Add New' : 'Edit'} Service Offering
+                </h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                  {tempService.category} • {tempService.location}
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingServiceIdx(null);
+                  setTempService(null);
+                }} 
+                className="p-3 hover:bg-white rounded-2xl transition-all shadow-sm group"
+              >
+                <X className="w-6 h-6 text-slate-300 group-hover:text-slate-600" />
+              </button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto flex-grow space-y-10 custom-scrollbar">
+              {/* Basic Details */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</label>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/20" 
+                    value={tempService.category} 
+                    onChange={e => setTempService({ ...tempService, category: e.target.value as VendorCategory })}
+                  >
+                    {Object.values(VendorCategory).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</label>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/20" 
+                    value={tempService.location} 
+                    onChange={e => setTempService({ ...tempService, location: e.target.value })}
+                  >
+                    {AVAILABLE_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Guest Capacity (Count)</label>
+                  <input 
+                    type="number"
+                    placeholder="e.g. 150"
+                    className="w-full bg-slate-50 border-none rounded-2xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/20"
+                    value={tempService.count || ''}
+                    onChange={e => setTempService({ ...tempService, count: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Description</label>
+                <textarea 
+                  placeholder="Tell clients what makes this service unique..." 
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/20 resize-none leading-relaxed min-h-[100px]" 
+                  value={tempService.description} 
+                  onChange={e => setTempService({ ...tempService, description: e.target.value })} 
+                />
+              </div>
+
+              {/* Packages */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Service Packages</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setTempService({
+                      ...tempService,
+                      packages: [...(tempService.packages || []), { id: Date.now().toString(), name: '', description: '', price: 0 }]
+                    })} 
+                    className="text-[10px] text-sky-600 font-bold uppercase flex items-center gap-2 px-4 py-2 bg-sky-50 rounded-xl hover:bg-sky-100 transition-colors"
+                  >
+                    <Plus className="w-3 h-3"/> Add Package
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(tempService.packages || []).map((pkg, pIdx) => (
+                    <div key={pkg.id} className="p-4 bg-slate-50 rounded-2xl space-y-4 border border-slate-100">
+                      <div className="flex gap-3">
+                        <input 
+                          placeholder="Package Name" 
+                          className="flex-grow bg-white border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500/20" 
+                          value={pkg.name} 
+                          onChange={e => {
+                            const pkgs = [...(tempService.packages || [])];
+                            pkgs[pIdx].name = e.target.value;
+                            setTempService({ ...tempService, packages: pkgs });
+                          }} 
+                        />
+                        <div className="relative w-32">
+                          <input 
+                            type="number" 
+                            placeholder="Price" 
+                            className="w-full bg-white border-none rounded-xl pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-sky-500/20" 
+                            value={pkg.price || ''} 
+                            onChange={e => {
+                              const pkgs = [...(tempService.packages || [])];
+                              pkgs[pIdx].price = e.target.value === '' ? 0 : Number(e.target.value);
+                              setTempService({ ...tempService, packages: pkgs });
+                            }} 
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">SEK</span>
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const pkgs = (tempService.packages || []).filter(p => p.id !== pkg.id);
+                            setTempService({ ...tempService, packages: pkgs });
+                          }} 
+                          className="p-3 text-slate-300 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5"/>
+                        </button>
+                      </div>
+                      <textarea 
+                        placeholder="Package details..." 
+                        className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-sky-500/20 resize-none" 
+                        rows={2} 
+                        value={pkg.description} 
+                        onChange={e => {
+                          const pkgs = [...(tempService.packages || [])];
+                          pkgs[pIdx].description = e.target.value;
+                          setTempService({ ...tempService, packages: pkgs });
+                        }} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Photos */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-slate-400">
+                  <label className="text-[10px] font-bold uppercase tracking-widest">Category-Specific Photos</label>
+                  <label className="cursor-pointer bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-sky-600 shadow-lg flex items-center gap-2">
+                    <Camera className="w-3.5 h-3.5" /> Upload Photos
+                    <input type="file" multiple className="hidden" accept="image/*" onChange={async (e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setIsProcessingImages(true);
+                        try {
+                          const files = Array.from(e.target.files) as File[];
+                          const compressed = await Promise.all(
+                            files.map(file => compressImage(file, 600, 600, 0.4))
+                          );
+                          setTempService({
+                            ...tempService,
+                            imageUrls: [...(tempService.imageUrls || []), ...compressed].slice(0, 6)
+                          });
+                        } catch (err) {
+                          console.error("Photo processing failed", err);
+                        } finally {
+                          setIsProcessingImages(false);
+                        }
+                      }
+                    }} />
+                  </label>
+                </div>
+                
+                {tempService.imageUrls && tempService.imageUrls.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                    {tempService.imageUrls.map((url) => (
+                      <div key={url} className="relative aspect-square rounded-[1.5rem] overflow-hidden group shadow-sm border border-slate-100">
+                        <img src={url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Service" />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const urls = (tempService.imageUrls || []).filter((u) => u !== url);
+                            setTempService({ ...tempService, imageUrls: urls });
+                          }} 
+                          className="absolute top-2 right-2 p-2 bg-white/90 text-red-500 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-110"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="aspect-[21/9] border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-400">
+                     <Camera className="w-8 h-8 mb-4 opacity-20" />
+                     <p className="text-xs font-light italic">No category photos uploaded.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-end">                
+                <button 
+                  type="button"
+                  onClick={() => {
+                    if (!editingVendor) return;
+                    let finalServices: VendorService[];
+                    if (editingServiceIdx === -1) {
+                      finalServices = [...(editingVendor.services || []), tempService];
+                    } else {
+                      finalServices = [...(editingVendor.services || [])];
+                      finalServices[editingServiceIdx!] = tempService;
+                    }
+                    setEditingVendor({...editingVendor, services: finalServices});
+                    setEditingServiceIdx(null);
+                    setTempService(null);
+                  }} 
+                  className="bg-slate-900 text-white px-12 py-5 rounded-[1.5rem] text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                >
+                  {editingServiceIdx === -1 ? 'Add Category' : 'Save Changes'}
+                </button>
             </div>
           </div>
         </div>

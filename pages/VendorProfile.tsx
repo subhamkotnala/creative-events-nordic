@@ -340,12 +340,20 @@ const VendorProfile: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor })
           <p className="text-slate-500 text-lg font-light leading-relaxed max-w-lg mb-12">
             Your profile changes have been successfully recorded and are now active.
           </p>
-          <button 
-            onClick={() => setShowSuccess(false)} 
-            className="bg-slate-900 text-white px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl"
-          >
-            Continue Editing
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <Link 
+              to="/dashboard"
+              className="bg-slate-900 text-white px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl text-center"
+            >
+              Back to Dashboard
+            </Link>
+            <button 
+              onClick={() => setShowSuccess(false)} 
+              className="bg-white border border-slate-200 text-slate-600 px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-slate-50 transition-all shadow-sm"
+            >
+              Continue Editing
+            </button>
+          </div>
         </div>
       </div>
     );
