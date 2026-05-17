@@ -371,12 +371,20 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
           <p className="text-slate-500 text-lg font-light leading-relaxed max-w-lg mb-12">
             Your profile changes have been successfully recorded and are now active.
           </p>
-          <button 
-            onClick={() => setShowSuccess(false)} 
-            className="bg-slate-900 text-white px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl"
-          >
-            Continue Editing
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <button 
+              onClick={() => setShowSuccess(false)} 
+              className="bg-slate-900 text-white px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl text-center"
+            >
+              Back to Dashboard
+            </button>
+            <button 
+              onClick={() => setShowSuccess(false)} 
+              className="bg-white border border-slate-200 text-slate-600 px-8 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-slate-50 transition-all shadow-sm"
+            >
+              Continue Editing
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -593,7 +601,8 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                     className="w-full bg-slate-50 border-none rounded-2xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-sky-500/20"
                     value={tempService.count || ''}
                     onChange={e => {
-                      setTempService({ ...tempService, count: Number(e.target.value) });
+                      const val = e.target.value;
+                      setTempService({ ...tempService, count: val === '' ? 0 : Number(val) });
                     }}
                   />
                 </div>
@@ -649,10 +658,11 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                             type="number" 
                             placeholder="Price" 
                             className="w-full bg-white border-none rounded-xl pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-sky-500/20" 
-                            value={pkg.price} 
+                            value={pkg.price || ''} 
                             onChange={e => {
+                              const val = e.target.value;
                               const pkgs = [...(tempService.packages || [])];
-                              pkgs[pIdx].price = Number(e.target.value);
+                              pkgs[pIdx].price = val === '' ? 0 : Number(val);
                               setTempService({ ...tempService, packages: pkgs });
                             }} 
                           />
@@ -665,8 +675,9 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                             className="w-full bg-white border-none rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-sky-500/20" 
                             value={pkg.capacity || ''} 
                             onChange={e => {
+                              const val = e.target.value;
                               const pkgs = [...(tempService.packages || [])];
-                              pkgs[pIdx].capacity = Number(e.target.value);
+                              pkgs[pIdx].capacity = val === '' ? 0 : Number(val);
                               setTempService({ ...tempService, packages: pkgs });
                             }} 
                           />
