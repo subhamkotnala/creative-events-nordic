@@ -93,11 +93,7 @@ const VendorReview: React.FC<VendorReviewProps> = ({
       message: `Are you sure you want to decline ${v.name}? This will delete the user from system i.e., he cannot login anymore and cannot be undone.`,
       action: async () => {
         try {
-            if (v.auth_id) {
-                await api.deleteUser(v.auth_id, v.id);
-            } else {
-                await api.deleteVendor(v.id);
-            }
+            await api.deleteUser(v.auth_id || v.id, v.id);
             onUpdateStatus(v.id, VendorStatus.REJECTED);
             setNotifications(prev => [`System: Declined application for ${v.name}`, ...prev]);
             setActionSuccess({
