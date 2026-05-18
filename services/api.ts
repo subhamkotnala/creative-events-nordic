@@ -144,12 +144,12 @@ class ApiService {
       throw new Error(errorData.error || "Deletion failed on server.");
     }
 
-    // 2. Local cleanup for any remaining records if id differed from auth_id 
-    // and server didn't catch them by auth_id
-    if (id && id !== auth_id) {
-       await supabase.from('profiles').delete().eq('id', id);
-       await supabase.from('applications').delete().eq('id', id);
-    }
+    // 2. Local cleanup for any remaining records
+    // Even if id and auth_id are same, we try redundant delete as safety measure
+    await supabase.from('profiles').delete().eq('id', id);
+    if (auth_id) await supabase.from('profiles').delete().eq('auth_id', auth_id);
+    await supabase.from('applications').delete().eq('id', id);
+    if (auth_id) await supabase.from('applications').delete().eq('auth_id', auth_id);
   }
 
   async deleteVendor(id: string): Promise<void> {

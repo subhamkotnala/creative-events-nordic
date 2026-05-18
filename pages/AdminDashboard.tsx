@@ -727,7 +727,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="p-8 border-t border-slate-100 flex gap-4 bg-slate-50/50">
                 <button onClick={handleSaveVendor} disabled={isProcessingImages} className="flex-grow bg-slate-900 text-white font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl disabled:opacity-50">
-                  {isProcessingImages ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {editingVendor.id ? 'Save Changes' : 'Confirm & Add to Queue'}
+                  {isProcessingImages ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'SAVE'}
                 </button>
                 <button onClick={() => setIsModalOpen(false)} className="px-10 py-5 bg-white border border-slate-200 text-slate-400 font-bold rounded-2xl text-[10px] uppercase tracking-[0.2em]">Cancel</button>
               </div>

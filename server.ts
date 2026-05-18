@@ -52,26 +52,32 @@ async function startServer() {
       console.log(`[SERVER] Deletion requested for auth_id: ${auth_id}`);
       
       // 1. Delete from related public tables first to avoid foreign key issues
-      const { error: profError } = await supabaseAdmin.from('profiles').delete().eq('auth_id', auth_id);
+      // Try deleting by both id and auth_id columns to be thorough
+      const { error: profError } = await supabaseAdmin.from('profiles').delete().or(`id.eq.${auth_id},auth_id.eq.${auth_id}`);
       if (profError) console.warn("[SERVER] Profile delete warning:", profError);
       
-      const { error: appError } = await supabaseAdmin.from('applications').delete().eq('auth_id', auth_id);
+      const { error: appError } = await supabaseAdmin.from('applications').delete().or(`id.eq.${auth_id},auth_id.eq.${auth_id}`);
       if (appError) console.warn("[SERVER] Application delete warning:", appError);
 
       // 2. Delete from auth.users
-      console.log(`[SERVER] Attempting supabaseAdmin.auth.admin.deleteUser(${auth_id})`);
-      const { data: deleteData, error: authError } = await supabaseAdmin.auth.admin.deleteUser(auth_id);
-      
-      if (authError) {
-        console.error("[SERVER] Supabase Auth admin delete failed:", authError);
-        // If user already doesn't exist in auth, but we deleted profiles, that's okay
-        if (authError.message.includes("User not found")) {
-           return res.json({ message: "Profile cleaned up, user was not found in auth. It might have been deleted already." });
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(auth_id);
+      if (isUUID) {
+        console.log(`[SERVER] Attempting supabaseAdmin.auth.admin.deleteUser(${auth_id})`);
+        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(auth_id);
+        
+        if (authError) {
+          console.error("[SERVER] Supabase Auth admin delete failed:", authError);
+          // If user already doesn't exist in auth, but we deleted profiles, that's okay
+          if (authError.message.includes("User not found")) {
+             return res.json({ message: "Profile cleaned up, user was not found in auth. It might have been deleted already." });
+          }
+          return res.status(500).json({ error: authError.message });
         }
-        return res.status(500).json({ error: authError.message });
+      } else {
+        console.log("[SERVER] Skipping auth.users deletion as auth_id is not a UUID");
       }
 
-      console.log(`[SERVER] Successfully deleted auth user and records for: ${auth_id}`, deleteData);
+      console.log(`[SERVER] Successfully deleted auth user and records for: ${auth_id}`);
       res.json({ message: "User and related records deleted successfully from both database and auth." });
     } catch (err: any) {
       console.error("Unexpected error during delete:", err);
