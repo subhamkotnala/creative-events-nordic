@@ -233,11 +233,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
   const handleDelete = (vendor: Vendor) => {
     setConfirmAction({
       title: 'Delete Partner',
       message: `Are you sure you want to delete ${vendor.name}? This will delete the user from system i.e., he cannot login anymore and cannot be undone.`,
       action: async () => {
+        setIsDeleting(vendor.id);
         try {
             await onDeleteVendor(vendor.auth_id || vendor.id, vendor.id);
             setNotifications(prev => [`System: Deleted partner record: ${vendor.name}`, ...prev]);
@@ -245,6 +248,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         } catch (err) {
             console.error("Delete failed:", err);
             alert("Delete failed: " + (err instanceof Error ? err.message : String(err)));
+        } finally {
+            setIsDeleting(null);
         }
       }
     });
@@ -457,10 +462,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
                             <button 
                               onClick={() => handleDelete(vendor)}
-                              className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                              disabled={isDeleting === vendor.id}
+                              className={`p-2 rounded-xl transition-all ${isDeleting === vendor.id ? 'text-slate-200 cursor-wait' : 'text-slate-300 hover:text-red-600 hover:bg-red-50'}`}
                               title="Delete Partner"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {isDeleting === vendor.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             </button>
                           </div>
                         </td>
