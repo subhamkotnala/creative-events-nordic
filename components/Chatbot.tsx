@@ -140,18 +140,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
     <>
       {/* Proactive Welcome Bubble */}
       {showWelcomeBubble && !isOpen && (
-        <div className="fixed bottom-24 right-6 z-[60] w-[260px] bg-white border border-sky-100 p-5 rounded-3xl shadow-2xl shadow-sky-900/10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="fixed bottom-24 right-4 md:right-6 z-[60] w-[160px] md:w-[260px] bg-white border border-sky-100 p-3 md:p-5 rounded-3xl shadow-2xl shadow-sky-900/10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <button 
             onClick={() => setShowWelcomeBubble(false)}
-            className="absolute top-3 right-3 p-1 text-slate-300 hover:text-slate-500 transition-colors"
+            className="absolute top-2 right-2 p-1 text-slate-300 hover:text-slate-500 transition-colors"
           >
             <X className="w-3 h-3" />
           </button>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-1 md:mb-2">
             <Sparkles className="w-3 h-3 text-sky-500" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600">{t('chatbot.badge')}</span>
+            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-sky-600">{t('chatbot.badge')}</span>
           </div>
-          <p className="text-xs text-slate-700 leading-relaxed font-medium">
+          <p className="text-[10px] md:text-xs text-slate-700 leading-tight md:leading-relaxed font-medium">
             {t('chatbot.proactive')}
           </p>
           {/* Bubble tail */}
@@ -162,15 +162,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
       {/* Toggle Button */}
       <button
         onClick={toggleChat}
-        className={`fixed bottom-6 right-6 z-[60] p-4 rounded-full shadow-2xl transition-all group flex items-center gap-2 ${isOpen ? 'bg-slate-800 text-white' : 'bg-sky-600 text-white hover:scale-105 active:scale-95'}`}
+        className={`fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[60] p-4 rounded-full shadow-2xl transition-all group flex items-center gap-2 ${isOpen ? 'bg-slate-800 text-white' : 'bg-sky-600 text-white hover:scale-105 active:scale-95'}`}
         aria-label="Open chat"
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-        {!isOpen && <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 whitespace-nowrap text-xs font-bold uppercase tracking-widest px-0 group-hover:px-2">Chat with Evie</span>}
+        {!isOpen && <span className="max-w-0 overflow-hidden md:group-hover:max-w-xs transition-all duration-500 whitespace-nowrap text-xs font-bold uppercase tracking-widest px-0 md:group-hover:px-2">Chat</span>}
       </button>
 
       {/* Chat Window */}
-      <div className={`fixed bottom-24 right-6 z-[60] w-[90vw] md:w-[400px] h-[70vh] max-h-[600px] bg-white border border-slate-200 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden transition-all duration-500 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-90 opacity-0 pointer-events-none'}`}>
+      <div className={`fixed bottom-24 right-4 md:bottom-28 md:right-6 z-[60] w-[calc(100vw-2rem)] md:w-[400px] h-[75vh] md:h-[70vh] max-h-[600px] bg-white border border-slate-200 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden transition-all duration-500 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}>
         {/* Header */}
         <div className="bg-slate-800 p-6 text-white flex justify-between items-center">
           <div>
