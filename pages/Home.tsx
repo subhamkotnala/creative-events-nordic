@@ -23,7 +23,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
 
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [contactForm, setContactForm] = useState({ vision: '', email: '', phone: '', capacity: '' });
+  const [contactForm, setContactForm] = useState({ vision: '', email: '', phone: '', capacity: '', eventDate: '' });
 
   const SLIDES = [
     {
@@ -88,12 +88,13 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
           message: contactForm.vision,
           user_email: contactForm.email,
           user_phone: contactForm.phone || 'Not provided',
-          user_capacity: contactForm.capacity || 'Not provided'
+          user_capacity: contactForm.capacity || 'Not provided',
+          event_date: contactForm.eventDate || 'Not provided'
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "xaAogphDl0s4ydiOa"
       );
       setFormSubmitted(true);
-      setContactForm({ vision: '', email: '', phone: '', capacity: '' });
+      setContactForm({ vision: '', email: '', phone: '', capacity: '', eventDate: '' });
       setTimeout(() => setFormSubmitted(false), 5000);
     } catch (error) {
       console.error("Failed to send contact form:", error);
@@ -409,6 +410,15 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                          onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
                          placeholder="e.g. 150" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Evenemangsdatum' : 'Event Date'}</label>
+                       <input 
+                         type="date" required
+                         value={contactForm.eventDate}
+                         onChange={(e) => setContactForm({...contactForm, eventDate: e.target.value})}
+                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
                        />
                     </div>
                     <button 
