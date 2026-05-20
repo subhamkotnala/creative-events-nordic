@@ -134,22 +134,42 @@ class ApiService {
   }
 
   async deleteUser(auth_id: string, id: string): Promise<void> {
+    console.log(`[API] deleteUser requested for auth_id: ${auth_id}, id: ${id}`);
+    
+    if (!auth_id) {
+      console.warn("[API] No auth_id provided for deletion, using id as fallback");
+      auth_id = id;
+    }
+
     // 1. Call server API to delete from auth.users AND profiles/applications by auth_id
     const response = await fetch(`/api/users/${auth_id}`, {
       method: 'DELETE',
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Deletion failed on server.");
+      let errorMessage = "Deletion failed on server.";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // Not a JSON response, maybe get text
+        const text = await response.text();
+        errorMessage = `Server Error (${response.status}): ${text || "No response body"}`;
+      }
+      throw new Error(errorMessage);
     }
 
     // 2. Local cleanup for any remaining records
     // Even if id and auth_id are same, we try redundant delete as safety measure
-    await supabase.from('profiles').delete().eq('id', id);
-    if (auth_id) await supabase.from('profiles').delete().eq('auth_id', auth_id);
-    await supabase.from('applications').delete().eq('id', id);
-    if (auth_id) await supabase.from('applications').delete().eq('auth_id', auth_id);
+    // Note: This might be blocked by RLS if not using service role, but server-side handles it too
+    try {
+      await supabase.from('profiles').delete().eq('id', id);
+      if (auth_id) await supabase.from('profiles').delete().eq('auth_id', auth_id);
+      await supabase.from('applications').delete().eq('id', id);
+      if (auth_id) await supabase.from('applications').delete().eq('auth_id', auth_id);
+    } catch (localErr) {
+      console.warn("[API] Local cleanup warning (likely RLS):", localErr);
+    }
   }
 
   async deleteVendor(id: string): Promise<void> {

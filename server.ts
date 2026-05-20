@@ -36,52 +36,54 @@ async function startServer() {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
 
-    console.log(`Delete request for user: ${auth_id}`);
+    console.log(`[SERVER] DELETE /api/users/${auth_id} - ServiceRole: ${serviceRoleKey ? 'PRESENT' : 'MISSING'}`);
 
     if (!serviceRoleKey || !supabaseUrl) {
-      console.error("Missing Supabase configuration in server environment", {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!serviceRoleKey
-      });
-      return res.status(500).json({ error: "Server configuration incomplete. SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_URL is missing." });
+      return res.status(500).json({ error: "Supabase service role key or URL missing from server environment." });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     try {
-      console.log(`[SERVER] Deletion requested for auth_id: ${auth_id}`);
+      // 1. Delete from related public tables
+      // We do them separately for maximum reliability
+      console.log(`[SERVER] Cleaning up database records for: ${auth_id}`);
       
-      // 1. Delete from related public tables first to avoid foreign key issues
-      // Try deleting by both id and auth_id columns to be thorough
-      const { error: profError } = await supabaseAdmin.from('profiles').delete().or(`id.eq.${auth_id},auth_id.eq.${auth_id}`);
-      if (profError) console.warn("[SERVER] Profile delete warning:", profError);
+      const { error: p1Error } = await supabaseAdmin.from('profiles').delete().eq('auth_id', auth_id);
+      if (p1Error) console.warn("[SERVER] Profile(auth_id) delete note:", p1Error.message);
       
-      const { error: appError } = await supabaseAdmin.from('applications').delete().or(`id.eq.${auth_id},auth_id.eq.${auth_id}`);
-      if (appError) console.warn("[SERVER] Application delete warning:", appError);
+      const { error: p2Error } = await supabaseAdmin.from('profiles').delete().eq('id', auth_id);
+      if (p2Error) console.warn("[SERVER] Profile(id) delete note:", p2Error.message);
+      
+      const { error: a1Error } = await supabaseAdmin.from('applications').delete().eq('auth_id', auth_id);
+      if (a1Error) console.warn("[SERVER] Application(auth_id) delete note:", a1Error.message);
+      
+      const { error: a2Error } = await supabaseAdmin.from('applications').delete().eq('id', auth_id);
+      if (a2Error) console.warn("[SERVER] Application(id) delete note:", a2Error.message);
 
-      // 2. Delete from auth.users
+      // 2. Delete from auth.users if it's a UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(auth_id);
       if (isUUID) {
-        console.log(`[SERVER] Attempting supabaseAdmin.auth.admin.deleteUser(${auth_id})`);
+        console.log(`[SERVER] Attempting Auth Admin delete for UUID: ${auth_id}`);
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(auth_id);
         
         if (authError) {
-          console.error("[SERVER] Supabase Auth admin delete failed:", authError);
-          // If user already doesn't exist in auth, but we deleted profiles, that's okay
-          if (authError.message.includes("User not found")) {
-             return res.json({ message: "Profile cleaned up, user was not found in auth. It might have been deleted already." });
+          console.error("[SERVER] Supabase Auth admin delete failed:", authError.message);
+          // If user already doesn't exist in auth, that's not a fatal error for this operation
+          if (authError.message.includes("User not found") || authError.status === 404) {
+             return res.json({ success: true, message: "Records cleaned up, auth user was not found." });
           }
-          return res.status(500).json({ error: authError.message });
+          return res.status(500).json({ error: `Auth Error: ${authError.message}` });
         }
       } else {
-        console.log("[SERVER] Skipping auth.users deletion as auth_id is not a UUID");
+        console.log(`[SERVER] ${auth_id} is not a UUID, skipping Auth Admin deletion.`);
       }
 
-      console.log(`[SERVER] Successfully deleted auth user and records for: ${auth_id}`);
-      res.json({ message: "User and related records deleted successfully from both database and auth." });
+      console.log(`[SERVER] Successfully processed deletion for: ${auth_id}`);
+      return res.json({ success: true, message: "Deletion cleanup completed." });
     } catch (err: any) {
-      console.error("Unexpected error during delete:", err);
-      res.status(500).json({ error: err.message });
+      console.error("[SERVER] Fatal error in DELETE /api/users:", err);
+      return res.status(500).json({ error: err.message || "Internal server error" });
     }
   });
 
