@@ -23,7 +23,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
 
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [contactForm, setContactForm] = useState({ vision: '', email: '', phone: '', capacity: '', eventDate: '' });
+  const [contactForm, setContactForm] = useState({ vision: '', email: '', phone: '', capacity: '', eventDate: '', category: '' });
 
   const SLIDES = [
     {
@@ -89,12 +89,13 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
           user_email: contactForm.email,
           user_phone: contactForm.phone || 'Not provided',
           user_capacity: contactForm.capacity || 'Not provided',
-          event_date: contactForm.eventDate || 'Not provided'
+          event_date: contactForm.eventDate || 'Not provided',
+          category: contactForm.category || 'Not specified'
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "xaAogphDl0s4ydiOa"
       );
       setFormSubmitted(true);
-      setContactForm({ vision: '', email: '', phone: '', capacity: '', eventDate: '' });
+      setContactForm({ vision: '', email: '', phone: '', capacity: '', eventDate: '', category: '' });
       setTimeout(() => setFormSubmitted(false), 5000);
     } catch (error) {
       console.error("Failed to send contact form:", error);
@@ -413,12 +414,26 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                        />
                     </div>
                     <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Kategori' : 'Category'}</label>
+                       <select 
+                         required
+                         value={contactForm.category}
+                         onChange={(e) => setContactForm({...contactForm, category: e.target.value})}
+                         className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none cursor-pointer ${contactForm.category ? 'text-slate-900' : 'text-slate-400'}`}
+                       >
+                         <option value="" disabled className="text-slate-400">{language === 'sv' ? 'Välj kategori...' : 'Select a category...'}</option>
+                         {Object.values(VendorCategory).map(cat => (
+                           <option key={cat} value={cat} className="text-slate-900">{t(`categories.${cat}`) || cat}</option>
+                         ))}
+                       </select>
+                    </div>
+                    <div className="space-y-2">
                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Evenemangsdatum' : 'Event Date'}</label>
                        <input 
                          type="date" required
                          value={contactForm.eventDate}
                          onChange={(e) => setContactForm({...contactForm, eventDate: e.target.value})}
-                         className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                         className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none ${contactForm.eventDate ? 'text-slate-900' : 'text-slate-400'}`} 
                        />
                     </div>
                     <button 

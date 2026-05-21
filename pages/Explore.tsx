@@ -5,6 +5,7 @@ import { Vendor, VendorService, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Search, MapPin, Star, Building2, Users, ArrowLeft } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 
 interface ExploreProps {
   vendors: Vendor[];
@@ -25,6 +26,54 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
   const [search, setSearch] = useState('');
   const [minRating, setMinRating] = useState<number>(0);
   const [minCapacity, setMinCapacity] = useState<number>(0);
+
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [contactForm, setContactForm] = useState({ 
+    vision: '', 
+    email: '', 
+    phone: '', 
+    capacity: '', 
+    eventDate: '', 
+    category: '' 
+  });
+
+  // Pre-populate category when filter category changes
+  useEffect(() => {
+    if (category !== 'All') {
+      setContactForm(prev => ({ ...prev, category }));
+    } else {
+      setContactForm(prev => ({ ...prev, category: '' }));
+    }
+  }, [category]);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    try {
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_fcxafes",
+        import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID || "template_cqrzyss",
+        {
+          message: contactForm.vision,
+          user_email: contactForm.email,
+          user_phone: contactForm.phone || 'Not provided',
+          user_capacity: contactForm.capacity || 'Not provided',
+          event_date: contactForm.eventDate || 'Not provided',
+          category: contactForm.category || 'Not specified'
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "xaAogphDl0s4ydiOa"
+      );
+      setFormSubmitted(true);
+      setContactForm({ vision: '', email: '', phone: '', capacity: '', eventDate: '', category: category !== 'All' ? category : '' });
+      setTimeout(() => setFormSubmitted(false), 5000);
+    } catch (error) {
+      console.error("Failed to send contact form:", error);
+      alert("Could not send message. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   useEffect(() => {
     const cat = searchParams.get('category');
@@ -193,8 +242,105 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
             </Link>
           ))
         ) : (
-          <div className="col-span-full py-24 text-center">
-            <p className="text-slate-400 serif text-2xl italic">No services found matching your criteria.</p>
+          <div className="col-span-full py-12 text-center max-w-2xl mx-auto">
+            <p className="text-slate-600 serif text-2xl italic mb-12 leading-relaxed">
+              {language === 'sv' 
+                ? 'Ingen tjänst tillgänglig. Du kan fylla i formuläret nedan för en anpassad tjänst' 
+                : 'No service available, you can fill the form for a custom service'}
+            </p>
+            
+            <div className="bg-slate-50 border border-slate-100 p-8 sm:p-12 rounded-[2.5rem] shadow-xl text-left">
+              <h3 className="text-2xl serif mb-6 text-slate-900">{t('home.contactTitle')}</h3>
+              
+              {formSubmitted ? (
+                <div className="py-12 text-center animate-fade-in">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Star className="w-8 h-8 text-slate-900" fill="currentColor" />
+                  </div>
+                  <p className="text-slate-900 serif text-xl italic">{t('home.successTitle')}</p>
+                  <p className="text-slate-400 text-[10px] mt-4 uppercase tracking-widest font-bold">{t('home.successBadge')}</p>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.visionLabel')}</label>
+                    <input 
+                      type="text" required
+                      value={contactForm.vision}
+                      onChange={(e) => setContactForm({...contactForm, vision: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                      placeholder={t('home.visionPlaceholder')} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.emailLabel')}</label>
+                     <input 
+                       type="email" required
+                       value={contactForm.email}
+                       onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                       placeholder="your@email.com" 
+                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Telefonnummer' : 'Phone Number'}</label>
+                     <input 
+                       type="tel" required
+                       value={contactForm.phone}
+                       onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
+                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                       placeholder="+46 70 123 45 67" 
+                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Antal gäster' : 'Guest Capacity'}</label>
+                     <input 
+                       type="number" required
+                       value={contactForm.capacity}
+                       onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
+                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
+                       placeholder="e.g. 150" 
+                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Kategori' : 'Category'}</label>
+                     <select 
+                       required
+                       value={contactForm.category}
+                       onChange={(e) => setContactForm({...contactForm, category: e.target.value})}
+                       className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none cursor-pointer ${contactForm.category ? 'text-slate-900' : 'text-slate-400'}`}
+                     >
+                       <option value="" disabled className="text-slate-400">{language === 'sv' ? 'Välj kategori...' : 'Select a category...'}</option>
+                       {Object.values(VendorCategory).map(cat => (
+                         <option key={cat} value={cat} className="text-slate-900">{t(`categories.${cat}`) || cat}</option>
+                       ))}
+                     </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Evenemangsdatum' : 'Event Date'}</label>
+                     <input 
+                       type="date" required
+                       value={contactForm.eventDate}
+                       onChange={(e) => setContactForm({...contactForm, eventDate: e.target.value})}
+                       className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none ${contactForm.eventDate ? 'text-slate-900' : 'text-slate-400'}`} 
+                     />
+                  </div>
+                  
+                  <button 
+                    type="submit"
+                    disabled={isSending}
+                    className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50"
+                  >
+                    {isSending ? 'Sending...' : t('home.sendRequest')}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         )}
       </div>
