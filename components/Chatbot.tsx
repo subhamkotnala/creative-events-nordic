@@ -69,46 +69,48 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
 
       const ai = new GoogleGenAI({ apiKey });
       
-      const vendorContext = approvedVendors.map(v => {
-        const primaryService = v.services?.[0];
-        return {
-          name: v.name,
-          category: primaryService?.category || '',
-          location: v.applicationLocation || primaryService?.location || '',
-          description: primaryService?.description || '',
-          services: v.services.map(vs => `${vs.category}: ` + (vs.packages || []).map(p => `${p.name} (${p.price} SEK)`).join(', ')).join(' | ')
-        };
+      const vendorContext = approvedVendors.flatMap(v => {
+        return (v.services || []).map(vs => ({
+          vendorName: v.name,
+          category: vs.category,
+          location: vs.location,
+          description: vs.description || '',
+          packages: (vs.packages || []).map(p => `${p.name} (${p.price} SEK)`).join(', '),
+          vendorMainLocation: v.applicationLocation || ''
+        }));
       });
 
       const systemPrompt = language === 'sv' 
         ? `Du är "Evie", en professionell, hjälpsam och värdeorienterad AI-assistent för Creative Events, en prisvärd svensk eventmarknadsplats.
-           Ditt mål är att hjälpa användare att hitta prisvärda leverantörer från den angivna listan.
+           Ditt mål är att hjälpa användare att hitta prisvärda tjänster och leverantörer från den angivna listan.
            Svara ALLTID på SVENSKA.
            
-           DATA ÖVER LEVERANTÖRER:
+           DATA ÖVER TJÄNSTER OCH LEVERANTÖRER:
            ${JSON.stringify(vendorContext)}
 
            RIKTLINJER:
            1. Var hjälpsam, professionell och kortfattad.
-           2. Rekommendera ENDAST leverantörer som finns i datan ovan.
-           3. Fokusera på prisvärdhet och kvalitet för pengarna.
-           4. Om någon frågar efter en kategori eller plats vi inte har, förklara vänligt att vårt urval växer.
-           5. När du rekommenderar, nämna leverantörens namn, plats och varför de passar förfrågan.
-           6. Håll svaren vänliga och tillgängliga.`
+           2. Rekommendera ENDAST leverantörer och deras tjänster som finns i datan ovan.
+           3. Observera att en leverantör kan erbjuda olika tjänster på olika platser (fältet "location" ovan). Sök igenom de enskilda tjänsternas platser för att matcha användarens förfrågan (t.ex. om en leverantör har en dekor-tjänst i Göteborg, rekommendera den för Göteborg).
+           4. Fokusera på prisvärdhet och kvalitet för pengarna.
+           5. Om någon frågar efter en kategori eller plats vi inte har, förklara vänligt att vårt urval växer.
+           6. När du rekommenderar, nämna leverantörens namn, tjänstens specifika plats och varför de passar förfrågan.
+           7. Håll svaren vänliga och tillgängliga.`
         : `You are "Evie," a professional, helpful, and value-oriented AI assistant for Creative Events, a budget-friendly Swedish event marketplace.
-           Your goal is to help users find affordable vendors from the provided list.
+           Your goal is to help users find affordable services and vendors from the provided list.
            Svara ALWAYS in ENGLISH.
            
-           VENDORS DATA:
+           SERVICES AND VENDORS DATA:
            ${JSON.stringify(vendorContext)}
 
            GUIDELINES:
            1. Be helpful, professional, and concise.
-           2. ONLY recommend vendors that exist in the DATA above.
-           3. Focus on affordability and value for money.
-           4. If someone asks for a category or location we don't have, politely explain that our curated selection is growing.
-           5. When recommending, mention the vendor name, their location, and why they fit the user's request.
-           6. Keep responses friendly and accessible.`;
+           2. ONLY recommend vendors and services that exist in the DATA above.
+           3. Note that vendors can offer multiple different services, and each service has its own specific location (which might be different from the vendor's main location). When a user asks for a service in a specific location, look through the list of services' specific locations (the "location" field) in the DATA to match.
+           4. Focus on affordability and value for money.
+           5. If someone asks for a category or location we don't have, politely explain that our curated selection is growing.
+           6. When recommending, mention the vendor name, the service's specific location, and why they fit the user's request.
+           7. Keep responses friendly and accessible.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
