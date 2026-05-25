@@ -5,9 +5,10 @@ import { Vendor, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
 import { optimizeVendorDescription } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Globe, Music, Loader2, Instagram, Facebook, Rocket, TrendingUp, Users, AlertCircle, Check,
-  Camera, Trash2, Sparkles, UploadCloud, Lock, ArrowLeft
+  Camera, Trash2, Sparkles, UploadCloud, Lock, ArrowLeft, Info
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { api } from '../services/api';
@@ -61,6 +62,7 @@ interface JoinMarketplaceProps {
 
 const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -70,7 +72,7 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
     name: '',
     location: AVAILABLE_LOCATIONS[0],
     description: '',
-    email: '',
+    email: user?.email || '',
     password: '',
     passwordConfirm: '',
     phone: '',
@@ -136,11 +138,11 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
 
     // Required fields validation
     if (!formData.name.trim()) { setSubmitError("Business Name is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
-    if (!formData.email.trim()) { setSubmitError("Email Address is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
+    if (!user && !formData.email.trim()) { setSubmitError("Email Address is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.phone.trim()) { setSubmitError("Phone Number is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.location.trim()) { setSubmitError("Main Region is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.description.trim()) { setSubmitError("Business Story is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
-    if (formData.password !== formData.passwordConfirm) { setSubmitError("Passwords do not match."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
+    if (!user && formData.password !== formData.passwordConfirm) { setSubmitError("Passwords do not match."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (!formData.imageUrl) { setSubmitError("Cover Image is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     if (galleryImages.length === 0) { setSubmitError("At least 1 Gallery Image is required."); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsSubmitting(false); return; }
     
@@ -159,28 +161,41 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
     }
 
     try {
-      // 1. Sign Up
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      });
+      let authUserId: string;
+      let applicationEmail: string;
 
-      console.log({ authData, authError });
+      if (user) {
+        // Logged-in user upgrading to vendor — reuse existing auth account
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) throw new Error('Session expired. Please sign in again.');
+        authUserId = authUser.id;
+        applicationEmail = user.email;
+      } else {
+        // New user — create Supabase auth account
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+        });
 
-      if (authError) {
-        console.error("Supabase sign up error:", authError);
-        throw authError;
+        console.log({ authData, authError });
+
+        if (authError) {
+          console.error("Supabase sign up error:", authError);
+          throw authError;
+        }
+        if (!authData.user) throw new Error("Sign up failed.");
+        authUserId = authData.user.id;
+        applicationEmail = formData.email;
       }
-      if (!authData.user) throw new Error("Sign up failed.");
 
       const newVendor: Vendor = {
         name: formData.name,
-        email: formData.email,
+        email: applicationEmail,
         phone: formData.phone,
         website: formData.website,
-        id: crypto.randomUUID(), // App-generated ID
-        userId: authData.user.id, // Auth user ID
-        auth_id: authData.user.id, // Explicitly pass auth_id
+        id: crypto.randomUUID(),
+        userId: authUserId,
+        auth_id: authUserId,
         status: VendorStatus.NOT_VERIFIED,
         joinedAt: new Date().getFullYear().toString(),
         services: [], 
@@ -295,12 +310,23 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
             </div>
         </div>
 
-        {submitError && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm font-medium">{submitError}</p>
-          </div>
-        )}
+          {/* Logged-in user banner */}
+          {user && (
+            <div className="mb-8 flex items-start gap-3 bg-sky-50 border border-sky-100 rounded-2xl px-5 py-4">
+              <Info className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-sky-800">Upgrading your account to Vendor</p>
+                <p className="text-xs text-sky-600 mt-0.5">You're signed in as <span className="font-bold">{user.name || user.email}</span>. Fill in your business details below — no new account needed.</p>
+              </div>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p className="text-sm font-medium">{submitError}</p>
+            </div>
+          )}
 
         <form onSubmit={handleSubmit} className="space-y-12">
           {/* Basic Info */}
@@ -311,24 +337,30 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('vendorDashboard.businessName')}</label>
                 <input required className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('home.emailLabel')}</label>
-                <input required type="email" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input required type="password" placeholder="Create a secure password" className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+              {!user && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('home.emailLabel')}</label>
+                  <input required type="email" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input required type="password" placeholder="Confirm your password" className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.passwordConfirm} onChange={e => setFormData({ ...formData, passwordConfirm: e.target.value })} />
+              )}
+              {!user && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input required type="password" placeholder="Create a secure password" className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                  </div>
                 </div>
-              </div>
+              )}
+              {!user && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input required type="password" placeholder="Confirm your password" className="w-full bg-slate-100 border-none rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.passwordConfirm} onChange={e => setFormData({ ...formData, passwordConfirm: e.target.value })} />
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
                 <input type="tel" placeholder="+46 70 123 45 67" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-1 focus:ring-sky-500" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '') })} />

@@ -1,4 +1,4 @@
-import { Vendor, UserProfile, VendorStatus, Session, VendorCategory } from '../types';
+import { Vendor, UserProfile, VendorStatus, Session, VendorCategory, Conversation, Message } from '../types';
 import { supabase } from '../supabaseClient';
 
 class ApiService {
@@ -341,6 +341,140 @@ class ApiService {
           applicationGalleryUrls: a.application_gallery_urls
       };
   }
+  // --- CHAT METHODS ---
+
+  async createOrGetConversation(
+    userId: string,
+    vendorId: string,
+    packageName: string | undefined,
+    packagePrice: number | undefined,
+    serviceCategory: string | undefined,
+    vendorName: string,
+    userName: string
+  ): Promise<Conversation> {
+    // Try to find an existing conversation for this user/vendor/package combo
+    let query = supabase
+      .from('conversations')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('vendor_id', vendorId);
+
+    if (packageName) {
+      query = query.eq('package_name', packageName);
+    } else {
+      query = query.is('package_name', null);
+    }
+
+    const { data: existing } = await query.maybeSingle();
+    if (existing) return existing as Conversation;
+
+    // Create new conversation
+    const { data, error } = await supabase
+      .from('conversations')
+      .insert({
+        user_id: userId,
+        vendor_id: vendorId,
+        package_name: packageName || null,
+        package_price: packagePrice || null,
+        service_category: serviceCategory || null,
+        vendor_name: vendorName,
+        user_name: userName,
+        last_message: '',
+        last_message_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Conversation;
+  }
+
+  async sendMessage(
+    conversationId: string,
+    senderId: string,
+    senderRole: 'USER' | 'VENDOR',
+    content: string
+  ): Promise<Message> {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_id: senderId,
+        sender_role: senderRole,
+        content,
+        is_read: false,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update last_message on conversation
+    await supabase
+      .from('conversations')
+      .update({
+        last_message: content.length > 80 ? content.slice(0, 80) + '...' : content,
+        last_message_at: new Date().toISOString(),
+      })
+      .eq('id', conversationId);
+
+    return data as Message;
+  }
+
+  async getConversations(profileId: string, role: 'USER' | 'VENDOR'): Promise<Conversation[]> {
+    const field = role === 'USER' ? 'user_id' : 'vendor_id';
+    const { data, error } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq(field, profileId)
+      .order('last_message_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as Conversation[];
+  }
+
+  async getMessages(conversationId: string): Promise<Message[]> {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return (data || []) as Message[];
+  }
+
+  async markMessagesRead(conversationId: string, viewerRole: 'USER' | 'VENDOR'): Promise<void> {
+    const senderRole = viewerRole === 'USER' ? 'VENDOR' : 'USER';
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('conversation_id', conversationId)
+      .eq('sender_role', senderRole)
+      .eq('is_read', false);
+  }
+
+  async getUnreadCount(profileId: string, role: 'USER' | 'VENDOR'): Promise<number> {
+    const field = role === 'USER' ? 'user_id' : 'vendor_id';
+    const senderRole = role === 'USER' ? 'VENDOR' : 'USER';
+
+    const { data: conversations } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq(field, profileId);
+
+    if (!conversations || conversations.length === 0) return 0;
+
+    const convIds = conversations.map((c: any) => c.id);
+    const { count } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .in('conversation_id', convIds)
+      .eq('sender_role', senderRole)
+      .eq('is_read', false);
+
+    return count || 0;
+  }
 }
 
-export const api = new ApiService();
+export const api = new ApiService();
