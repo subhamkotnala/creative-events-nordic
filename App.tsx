@@ -16,11 +16,13 @@ import VendorMockup from './pages/VendorMockup';
 import RegisterVendor from './pages/RegisterVendor';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
+import VendorInbox from './pages/VendorInbox';
 import Chatbot from './components/Chatbot';
+import UserChatbox from './components/UserChatbox';
 import { api } from './services/api';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock } from 'lucide-react';
+import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox } from 'lucide-react';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -66,6 +68,8 @@ const AppContent: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [userChatOpen, setUserChatOpen] = useState(false);
+  const [userUnreadCount, setUserUnreadCount] = useState(0);
   
   const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -208,6 +212,24 @@ const AppContent: React.FC = () => {
               <button onClick={() => setLanguage('sv')} className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all ${language === 'sv' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}`}>SV</button>
             </div>
 
+            {/* Messages icon for USER role */}
+            {user?.role === 'USER' && (
+              <button
+                onClick={() => setUserChatOpen(p => !p)}
+                title="My Messages"
+                className={`relative p-2.5 rounded-full transition-all ${
+                  userChatOpen ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white'
+                }`}
+              >
+                <Inbox className="w-5 h-5" />
+                {userUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {userUnreadCount > 9 ? '9+' : userUnreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {user ? (
               <div className="relative" ref={menuRef}>
                 <button 
@@ -249,6 +271,13 @@ const AppContent: React.FC = () => {
                             className={getMenuLinkClass('/dashboard')}
                           >
                             <ShoppingBag className="w-4 h-4" /> Dashboard
+                          </Link>
+                          <Link 
+                            to="/vendor-inbox" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/vendor-inbox')}
+                          >
+                            <Inbox className="w-4 h-4" /> Inbox
                           </Link>
                           <Link 
                             to="/profile" 
@@ -296,6 +325,9 @@ const AppContent: React.FC = () => {
             <Route path="/admin" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminDashboard vendors={vendors} onUpdateStatus={updateStatus} onToggleFeature={toggleFeature} onDeleteVendor={deleteVendor} onUpdateVendor={addVendor} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
             <Route path="/vendor-review" element={<PageTransition><PrivateRoute roles={['ADMIN']}><VendorReview vendors={vendors} onUpdateStatus={updateStatus} /></PrivateRoute></PageTransition>} />
             
+            {/* Vendor Inbox */}
+            <Route path="/vendor-inbox" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorInbox /></PrivateRoute></PageTransition>} />
+            
             {/* New Change Password Route (Accessible to authenticated users) */}
             <Route path="/change-password" element={<PageTransition><PrivateRoute><ChangePassword /></PrivateRoute></PageTransition>} />
 
@@ -319,6 +351,13 @@ const AppContent: React.FC = () => {
       </main>
 
       <Chatbot vendors={vendors} />
+      {user?.role === 'USER' && (
+        <UserChatbox
+          isOpen={userChatOpen}
+          onClose={() => setUserChatOpen(false)}
+          onUnreadCountChange={setUserUnreadCount}
+        />
+      )}
       
       <footer className="bg-white border-t border-slate-200 py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">

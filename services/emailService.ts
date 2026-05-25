@@ -46,5 +46,45 @@ export const emailService = {
       console.error("Email send failed:", error);
       return { success: false, error };
     }
+  },
+
+  /**
+   * Sends an inquiry notification email to the admin when a new chat inquiry is raised.
+   */
+  sendInquiryNotificationToAdmin: async (
+    userName: string,
+    userEmail: string,
+    vendorName: string,
+    packageName: string,
+    eventDate: string,
+    message: string
+  ) => {
+    try {
+      const INQUIRY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_INQUIRY_TEMPLATE_ID || "YOUR_INQUIRY_TEMPLATE_ID";
+      if (PUBLIC_KEY === "YOUR_PUBLIC_KEY" || !INQUIRY_TEMPLATE_ID || INQUIRY_TEMPLATE_ID === "YOUR_INQUIRY_TEMPLATE_ID") {
+        console.warn("⚠️ EmailJS not configured. Simulating admin inquiry notification.");
+        console.log(`%c[EMAIL SIMULATION - Admin Inquiry]\n  From: ${userName} <${userEmail}>\n  Vendor: ${vendorName}\n  Package: ${packageName}\n  Event Date: ${eventDate}\n  Message: ${message}`, "color: #a855f7; font-weight: bold;");
+        return { success: true, simulated: true };
+      }
+
+      await emailjs.send(
+        SERVICE_ID,
+        INQUIRY_TEMPLATE_ID,
+        {
+          user_name: userName,
+          user_email: userEmail,
+          vendor_name: vendorName,
+          package_name: packageName || 'General Inquiry',
+          event_date: eventDate || 'Not specified',
+          message: message,
+        },
+        PUBLIC_KEY
+      );
+
+      return { success: true, simulated: false };
+    } catch (error) {
+      console.error("Admin inquiry email failed:", error);
+      return { success: false, error };
+    }
   }
 };

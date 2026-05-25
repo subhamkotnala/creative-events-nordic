@@ -96,3 +96,27 @@ export interface Session {
   user: UserProfile | null;
   token: string | null;
 }
+
+export interface Conversation {
+  id: string;
+  user_id: string;
+  vendor_id: string;
+  package_name?: string;
+  package_price?: number;
+  service_category?: string;
+  vendor_name?: string;
+  user_name?: string;
+  created_at: string;
+  last_message_at: string;
+  last_message?: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  sender_role: 'USER' | 'VENDOR';
+  content: string;
+  created_at: string;
+  is_read: boolean;
+}

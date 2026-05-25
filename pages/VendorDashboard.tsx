@@ -15,7 +15,7 @@ import {
   Plus, Sparkles, Check, Clock, XCircle, 
   Instagram, Facebook, Camera, UploadCloud,
   Globe, Music, Loader2, Trash2, CheckCircle2, AlertCircle,
-  Eye, BarChart3, MousePointerClick, MessageSquare, X, Settings
+  Eye, BarChart3, MousePointerClick, MessageSquare, X, Settings, Inbox
 } from 'lucide-react';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number = 0.5): Promise<string> => {
@@ -421,7 +421,7 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
       {currentVendor && <StatusBanner status={currentVendor.status} />}
 
       {/* Analytics Section */}
-      <div className="mb-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+      <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-4">
             <div className="flex items-center gap-3 text-slate-400">
                 <div className="p-2 bg-slate-50 rounded-xl">
@@ -445,6 +445,20 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                 {currentVendor?.inquiries?.toLocaleString() || 0}
             </p>
         </div>
+
+        <Link
+          to="/vendor-inbox"
+          className="bg-gradient-to-br from-sky-500 to-sky-700 p-6 rounded-[2rem] shadow-sm flex flex-col gap-4 group hover:shadow-xl hover:shadow-sky-200 transition-all"
+        >
+            <div className="flex items-center gap-3 text-sky-100">
+                <div className="p-2 bg-white/20 rounded-xl">
+                    <Inbox className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Inbox</span>
+            </div>
+            <p className="text-sm font-semibold text-white ml-1">View all customer messages &amp; inquiries</p>
+            <span className="text-[10px] text-sky-200 font-bold uppercase tracking-widest group-hover:translate-x-1 transition-transform inline-block">Open Inbox →</span>
+        </Link>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-12 pb-24">

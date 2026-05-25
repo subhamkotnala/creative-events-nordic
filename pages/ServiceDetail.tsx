@@ -1,36 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { VendorCategory, Vendor } from '../types';
-import { MapPin, ArrowLeft, Building2, ExternalLink, Mail, Calendar, Send, X, CheckCircle2, User, Loader2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { MapPin, ArrowLeft, Building2, ExternalLink, Mail, Calendar, Send, X, CheckCircle2, User, Loader2, ChevronLeft, ChevronRight, Users, MessageSquare, LogIn, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
-import emailjs from '@emailjs/browser';
+import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import { api } from '../services/api';
+import { emailService } from '../services/emailService';
 
 interface ServiceDetailProps {
   vendors: Vendor[];
 }
 
-// EmailJS Configuration
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_INQUIRY_TEMPLATE_ID;
-const EMAILJS_ACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ACK_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
 
 const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
   const { vendorId, serviceId } = useParams<{ vendorId: string; serviceId: string }>();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const historyStack: string[] = location.state?.history || ['/explore'];
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [inquirySent, setInquirySent] = useState(false);
+  const [newConversationId, setNewConversationId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', message: '' });
   const [showCalendar, setShowCalendar] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [inquiryError, setInquiryError] = useState<string | null>(null);
   const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryImageLoading, setIsGalleryImageLoading] = useState(true);
@@ -60,61 +61,93 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Called when user clicks Inquire Now — checks auth first
+  const handleInquireClick = (pkg?: any) => {
+    if (!user) {
+      setSelectedPackage(pkg || null);
+      setShowSignInPrompt(true);
+    } else {
+      setSelectedPackage(pkg || null);
+      // Clear name so the user types their actual name (not their email/username from auth)
+      setFormData(prev => ({ ...prev, name: '' }));
+      setInquiryError(null);
+      setIsModalOpen(true);
+    }
+  };
+
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.date || !formData.message.trim()) {
-      alert(language === 'sv' ? 'Vänligen fyll i alla fält (inklusive datum).' : 'Please fill out all fields (including the date).');
+    setInquiryError(null);
+
+    // Name must be typed by the user — we do NOT fall back to user.name which may be their email
+    const resolvedName = formData.name.trim();
+
+    if (!resolvedName) {
+      setInquiryError('Please enter your full name.');
       return;
     }
+    if (!formData.phone.trim()) {
+      setInquiryError('Please enter your phone number.');
+      return;
+    }
+    if (!formData.date) {
+      setInquiryError('Please select your event date.');
+      return;
+    }
+    if (!formData.message.trim()) {
+      setInquiryError('Please write a message.');
+      return;
+    }
+
+    if (!user || !vendor) return;
     
     setIsSending(true);
 
     try {
-      if (!vendor) return;
-      const templateParams = {
-        vendor_name: vendor.name,
-        vendor_email: vendor.email,
-        user_name: formData.name,
-        user_email: formData.email,
-        user_phone: formData.phone || 'Not provided',
-        event_date: formData.date || 'Not specified',
-        message: selectedPackage 
-          ? `Package: ${selectedPackage.name}\n\nPrice: ${selectedPackage.price} SEK\n\n${formData.message}`
-          : formData.message,
-      };
+      // 1. Build the inquiry message text
+      // Phone is intentionally excluded — it goes to admin only via email, not visible to vendor
+      const inquiryMessage = [
+        selectedPackage ? `📦 Package: ${selectedPackage.name} (${selectedPackage.price?.toLocaleString()} SEK)` : null,
+        `📅 Event Date: ${formData.date}`,
+        formData.message.trim(),
+      ].filter(Boolean).join('\n');
 
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
+      // 2. Create or get conversation thread
+      const conversation = await api.createOrGetConversation(
+        user.id,
+        vendor.id,
+        selectedPackage?.name,
+        selectedPackage?.price,
+        service?.category,
+        vendor.name,
+        resolvedName
       );
 
-      // Send acknowledgment email to the user
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_ACK_TEMPLATE_ID,
-        {
-          vendor_name: vendor.name,
-          event_date: formData.date || 'Not specified',
-          user_email: formData.email,
-          user_name: formData.name,
-        },
-        EMAILJS_PUBLIC_KEY
+      // 3. Send inquiry as first message
+      await api.sendMessage(conversation.id, user.id, 'USER', inquiryMessage);
+      setNewConversationId(conversation.id);
+
+      // 4. Notify admin via email
+      await emailService.sendInquiryNotificationToAdmin(
+        resolvedName,
+        user.email,
+        vendor.name,
+        selectedPackage?.name || 'General Inquiry',
+        formData.date,
+        formData.message
       );
 
-      // Increment inquiry count in database
+      // 5. Increment inquiry count
       if (vendor.id) {
-          await api.incrementVendorInquiries(vendor.id);
+        await api.incrementVendorInquiries(vendor.id);
       }
 
       setInquirySent(true);
       setIsModalOpen(false);
       setFormData({ name: '', email: '', phone: '', date: '', message: '' });
-    } catch (error) {
-      console.error("Failed to send inquiry:", error);
-      alert("Could not send inquiry. Please try again.");
+    } catch (error: any) {
+      console.error('Failed to send inquiry:', error);
+      setInquiryError(error?.message || 'Could not send inquiry. Please try again.');
     } finally {
       setIsSending(false);
     }
@@ -147,6 +180,38 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
+
+      {/* Sign-In Prompt Modal */}
+      {showSignInPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowSignInPrompt(false)} />
+          <div className="relative w-full max-w-sm animate-in zoom-in-95 duration-300">
+            <div className="bg-white rounded-[2rem] shadow-2xl p-10 text-center flex flex-col items-center">
+              <button onClick={() => setShowSignInPrompt(false)} className="absolute top-5 right-5 p-2 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-all">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mb-5">
+                <MessageSquare className="w-7 h-7 text-sky-600" />
+              </div>
+              <h3 className="text-2xl serif text-slate-900 mb-2">Sign In to Inquire</h3>
+              <p className="text-slate-500 text-sm font-light leading-relaxed mb-8">
+                Create a free account or sign in to send your inquiry directly to <span className="font-semibold text-slate-700">{vendor?.name}</span> and chat in real time.
+              </p>
+              <Link
+                to="/login"
+                state={{ from: location.pathname }}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl mb-3"
+              >
+                <LogIn className="w-4 h-4" /> Sign In
+              </Link>
+              <button onClick={() => setShowSignInPrompt(false)} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Inquiry Modal */}
       {isModalOpen && vendor && service && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -192,43 +257,26 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                   </div>
                 )}
                 
-                <p className="text-slate-500 text-[11px] font-medium mb-6 leading-relaxed">
-                  {t('vendorDetail.inquirySub')}
-                </p>
-                
+                <div className="mb-5 flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3">
+                  <ShieldCheck className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                  <p className="text-xs text-sky-700 font-medium">Signed in as <span className="font-bold">{user?.name || user?.email}</span> — your message goes directly to the vendor.</p>
+                </div>
+
                 <form onSubmit={handleInquirySubmit} className="space-y-5">
-                  {/* Grid for Name/Email */}
-                  <div className="grid md:grid-cols-2 gap-5">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('vendorDetail.fullName')}</label>
-                      <div className="relative">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input 
-                          type="text" 
-                          name="name" 
-                          required 
-                          value={formData.name} 
-                          onChange={handleFormChange} 
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-sm focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder:text-slate-300 font-medium text-slate-700" 
-                          placeholder="Jane Doe"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('vendorDetail.emailAddress')}</label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input 
-                          type="email" 
-                          name="email" 
-                          required 
-                          value={formData.email} 
-                          onChange={handleFormChange} 
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-sm focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder:text-slate-300 font-medium text-slate-700" 
-                          placeholder="name@example.com"
-                        />
-                      </div>
+                  {/* Name field — prefilled from auth */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('vendorDetail.fullName')}</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                      <input 
+                        type="text" 
+                        name="name" 
+                        required 
+                        value={formData.name} 
+                        onChange={handleFormChange} 
+                        className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-3.5 text-sm focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder:text-slate-300 font-medium text-slate-700" 
+                        placeholder="Enter your full name"
+                      />
                     </div>
                   </div>
 
@@ -298,6 +346,13 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                     />
                   </div>
 
+                  {/* Inline error */}
+                  {inquiryError && (
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-600 animate-in fade-in">
+                      <span className="text-xs font-medium leading-relaxed">{inquiryError}</span>
+                    </div>
+                  )}
+
                   {/* Submit Button */}
                   <button 
                     type="submit" 
@@ -311,16 +366,17 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" /> 
-                        {t('vendorDetail.sendInquiry')}
+                        <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
+                        Send Inquiry to Vendor
                       </>
                     )}
                   </button>
                   
                   <p className="text-center text-[9px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-                    By submitting this form, you agree to share your contact details with the vendor for the purpose of this inquiry.
+                    Your message goes directly to the vendor. Admin is notified. Contact info cannot be exchanged in chat.
                   </p>
                 </form>
+
               </div>
             </div>
           </div>
@@ -339,13 +395,24 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                 <X className="w-5 h-5" />
               </button>
               <div className="w-20 h-20 bg-green-400/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle2 className="w-10 h-10 text-green-400" />
+                <CheckCircle2 className="w-10 h-10 text-green-400" />
               </div>
-              <h3 className="text-3xl serif mb-4">{t('vendorDetail.inquirySent')}</h3>
-              <p className="text-slate-400 text-sm font-light leading-relaxed mb-10">{t('vendorDetail.inquirySentSub')}</p>
-              <button onClick={() => setInquirySent(false)} className="w-full bg-white text-slate-900 font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-sky-900/40 hover:bg-sky-500 hover:text-white transition-all">
+              <h3 className="text-3xl serif mb-3">Inquiry Sent!</h3>
+              <p className="text-slate-400 text-sm font-light leading-relaxed mb-3">
+                Your message has been sent directly to <span className="text-white font-medium">{vendor?.name}</span>. The admin has been notified.
+              </p>
+              <p className="text-slate-500 text-xs mb-8">Open your Messages (chat icon) to continue the conversation.</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setInquirySent(false)}
+                  className="w-full bg-white text-slate-900 font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-500 hover:text-white transition-all"
+                >
+                  <MessageSquare className="w-4 h-4 inline mr-2" />View in Messages
+                </button>
+                <button onClick={() => setInquirySent(false)} className="text-slate-500 text-xs hover:text-slate-300 transition-colors">
                   Close
-              </button>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -509,10 +576,10 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
             </div>
             <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
                <button 
-                 onClick={() => setIsModalOpen(true)} 
-                 className="w-full md:w-auto py-4 px-8 bg-slate-900 text-white rounded-2xl text-xs uppercase tracking-[0.2em] font-bold hover:bg-sky-600 transition-all shadow-xl shadow-slate-200"
+                 onClick={() => handleInquireClick()} 
+                 className="w-full md:w-auto py-4 px-8 bg-slate-900 text-white rounded-2xl text-xs uppercase tracking-[0.2em] font-bold hover:bg-sky-600 transition-all shadow-xl shadow-slate-200 flex items-center gap-2"
                >
-                  {t('vendorDetail.inquireNow')}
+                  <MessageSquare className="w-4 h-4" />{t('vendorDetail.inquireNow')}
                </button>
             </div>
           </div>
@@ -532,7 +599,7 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
                 {service.packages.map(pkg => (
                   <div 
                     key={pkg.id} 
-                    onClick={() => { setSelectedPackage(pkg); setIsModalOpen(true); }}
+                    onClick={() => handleInquireClick(pkg)}
                     className="border border-slate-100 rounded-[2rem] p-8 transition-all group flex flex-col h-full bg-slate-50/50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 cursor-pointer border-transparent hover:border-slate-200 relative overflow-hidden"
                   >
                     <div className="flex-grow">

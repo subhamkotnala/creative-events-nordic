@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Instagram, Facebook, Send, X, CheckCircle2, Music, Loader2, User, MessageSquare, Globe, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -585,41 +585,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                        <button onClick={() => setIsModalOpen(true)} className="w-full bg-white text-slate-900 font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-500 hover:text-white transition-all shadow-xl shadow-sky-900/40">
                         {t('vendorDetail.sendInquiry')}
                        </button>
-                       {user?.role === 'ADMIN' && vendor.website && (
-                         <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="w-full border border-white/10 text-slate-500 py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:text-white hover:border-white/30 transition-all text-center block">
-                           {t('vendorDetail.visitWebsite')}
-                         </a>
-                       )}
                     </div>
-                    
-                    {/* Social Icons - Accessible only to admins */}
-                    {user?.role === 'ADMIN' && (vendor.website || vendor.socials?.instagram || vendor.socials?.facebook || vendor.socials?.tiktok) && (
-                      <div className="pt-8 border-t border-white/5 space-y-4">
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em]">Connect With Us</p>
-                        <div className="flex gap-4">
-                          {vendor.website && (
-                            <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Globe className="w-4 h-4" />
-                            </a>
-                          )}
-                          {vendor.socials?.instagram && (
-                            <a href={vendor.socials.instagram} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Instagram className="w-4 h-4" />
-                            </a>
-                          )}
-                          {vendor.socials?.facebook && (
-                            <a href={vendor.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Facebook className="w-4 h-4" />
-                            </a>
-                          )}
-                          {vendor.socials?.tiktok && (
-                            <a href={vendor.socials.tiktok} target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-2xl hover:bg-sky-600 transition-all">
-                              <Music className="w-4 h-4" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </>
                 )}
              </div>
