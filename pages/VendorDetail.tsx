@@ -772,12 +772,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                                   {timeAgo(conv.last_message_at)}
                                 </span>
                               </div>
-                              {conv.package_name && (
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-sky-500 mb-0.5 truncate font-mono">
-                                  {conv.package_name}
-                                </p>
-                              )}
-                              <p className={`text-[11px] truncate font-sans ${unread > 0 ? 'text-slate-800 font-semibold' : 'text-slate-400 font-light'}`}>
+                              <p className={`text-[11px] truncate font-sans ${unread > 0 ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>
                                 {conv.last_message || 'New inquiry'}
                               </p>
                             </div>

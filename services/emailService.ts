@@ -50,6 +50,7 @@ export const emailService = {
 
   /**
    * Sends an inquiry notification email to the admin when a new chat inquiry is raised.
+   * Keeps contact details scrubbed to respect privacy.
    */
   sendInquiryNotificationToAdmin: async (
     userName: string,
@@ -63,7 +64,7 @@ export const emailService = {
       const INQUIRY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_INQUIRY_TEMPLATE_ID || "YOUR_INQUIRY_TEMPLATE_ID";
       if (PUBLIC_KEY === "YOUR_PUBLIC_KEY" || !INQUIRY_TEMPLATE_ID || INQUIRY_TEMPLATE_ID === "YOUR_INQUIRY_TEMPLATE_ID") {
         console.warn("⚠️ EmailJS not configured. Simulating admin inquiry notification.");
-        console.log(`%c[EMAIL SIMULATION - Admin Inquiry]\n  From: ${userName} <${userEmail}>\n  Vendor: ${vendorName}\n  Package: ${packageName}\n  Event Date: ${eventDate}\n  Message: ${message}`, "color: #a855f7; font-weight: bold;");
+        console.log(`%c[EMAIL SIMULATION - Admin Inquiry]\n  To: Admin (admin@creative.se)\n  User Name: ${userName}\n  Package: ${packageName}\n  Message: ${message}`, "color: #a855f7; font-weight: bold;");
         return { success: true, simulated: true };
       }
 
@@ -71,11 +72,10 @@ export const emailService = {
         SERVICE_ID,
         INQUIRY_TEMPLATE_ID,
         {
+          to_email: "admin@creative.se",
           user_name: userName,
-          user_email: userEmail,
           vendor_name: vendorName,
           package_name: packageName || 'General Inquiry',
-          event_date: eventDate || 'Not specified',
           message: message,
         },
         PUBLIC_KEY
@@ -86,5 +86,68 @@ export const emailService = {
       console.error("Admin inquiry email failed:", error);
       return { success: false, error };
     }
+  },
+
+  /**
+   * Sends inquiry notifications to BOTH admin and vendor when a user makes an inquiry.
+   * Strictly includes only the user's name, message, and package. Strictly NO contact details.
+   */
+  sendInquiryEmails: async (params: {
+    userName: string;
+    vendorName: string;
+    vendorEmail: string;
+    packageName: string;
+    message: string;
+  }) => {
+    const { userName, vendorName, vendorEmail, packageName, message } = params;
+    const INQUIRY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_INQUIRY_TEMPLATE_ID || "YOUR_INQUIRY_TEMPLATE_ID";
+
+    // 1. Notify Admin
+    try {
+      if (PUBLIC_KEY === "YOUR_PUBLIC_KEY" || !INQUIRY_TEMPLATE_ID || INQUIRY_TEMPLATE_ID === "YOUR_INQUIRY_TEMPLATE_ID") {
+        console.warn("⚠️ EmailJS not configured. Simulating admin inquiry notification.");
+        console.log(`%c[EMAIL SIMULATION - Admin Inquiry]\n  To: Admin (admin@creative.se)\n  User Name: ${userName}\n  Package: ${packageName}\n  Message: ${message}`, "color: #a855f7; font-weight: bold;");
+      } else {
+        await emailjs.send(
+          SERVICE_ID,
+          INQUIRY_TEMPLATE_ID,
+          {
+            to_email: "admin@creative.se",
+            user_name: userName,
+            vendor_name: vendorName,
+            package_name: packageName || 'General Inquiry',
+            message: message,
+          },
+          PUBLIC_KEY
+        );
+      }
+    } catch (error) {
+      console.error("Admin inquiry email failed:", error);
+    }
+
+    // 2. Notify Vendor
+    try {
+      if (PUBLIC_KEY === "YOUR_PUBLIC_KEY" || !INQUIRY_TEMPLATE_ID || INQUIRY_TEMPLATE_ID === "YOUR_INQUIRY_TEMPLATE_ID") {
+        console.warn("⚠️ EmailJS not configured. Simulating vendor inquiry notification.");
+        console.log(`%c[EMAIL SIMULATION - Vendor Inquiry]\n  To: ${vendorName} <${vendorEmail}>\n  User Name: ${userName}\n  Package: ${packageName}\n  Message: ${message}`, "color: #10b981; font-weight: bold;");
+      } else {
+        await emailjs.send(
+          SERVICE_ID,
+          INQUIRY_TEMPLATE_ID,
+          {
+            to_email: vendorEmail,
+            user_name: userName,
+            vendor_name: vendorName,
+            package_name: packageName || 'General Inquiry',
+            message: message,
+          },
+          PUBLIC_KEY
+        );
+      }
+    } catch (error) {
+      console.error("Vendor inquiry email failed:", error);
+    }
+
+    return { success: true };
   }
 };
