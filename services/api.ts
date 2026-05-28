@@ -21,12 +21,30 @@ class ApiService {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !session.user) return null;
 
-    // Fetch profile for role checking
-    const { data: profile } = await supabase
+    // Fetch profile for role checking with robust fallback
+    let { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', session.user.id)
-        .single();
+        .eq('email', session.user.email)
+        .maybeSingle();
+
+    if (!profile) {
+        const { data: profileByAuthId } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('auth_id', session.user.id)
+            .maybeSingle();
+        profile = profileByAuthId;
+    }
+
+    if (!profile) {
+        const { data: profileById } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+        profile = profileById;
+    }
         
     return {
         user: profile ? this.mapProfileToUser(profile) : { id: session.user.id, email: session.user.email || '', name: session.user.email || '', role: 'USER', favorites: [], createdAt: '', avatarUrl: '' },
@@ -395,6 +413,28 @@ class ApiService {
     senderRole: 'USER' | 'VENDOR',
     content: string
   ): Promise<Message> {
+    const session = await this.getCurrentSession();
+    if (session?.user?.role === 'ADMIN') {
+      try {
+        const response = await fetch(`/api/admin/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ conversationId, senderId, senderRole, content })
+        });
+        if (response.ok) {
+          return await response.json() as Message;
+        } else {
+          const errData = await response.json();
+          throw new Error(errData.error || "Failed admin message posting");
+        }
+      } catch (err) {
+        console.error("Failed to send message via admin proxy, falling back:", err);
+      }
+    }
+
     const { data, error } = await supabase
       .from('messages')
       .insert({
@@ -423,6 +463,24 @@ class ApiService {
 
   async getConversations(profileId: string, role: 'USER' | 'VENDOR'): Promise<Conversation[]> {
     const field = role === 'USER' ? 'user_id' : 'vendor_id';
+    
+    const session = await this.getCurrentSession();
+    if (session?.user?.role === 'ADMIN') {
+      try {
+        const response = await fetch(`/api/admin/conversations/${profileId}`, {
+          headers: {
+            'Authorization': `Bearer ${session.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          return await response.json() as Conversation[];
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin conversation proxy:", err);
+      }
+    }
+
     const { data, error } = await supabase
       .from('conversations')
       .select('*')
@@ -434,6 +492,23 @@ class ApiService {
   }
 
   async getMessages(conversationId: string): Promise<Message[]> {
+    const session = await this.getCurrentSession();
+    if (session?.user?.role === 'ADMIN') {
+      try {
+        const response = await fetch(`/api/admin/conversations/${conversationId}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${session.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          return await response.json() as Message[];
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin messages proxy:", err);
+      }
+    }
+
     const { data, error } = await supabase
       .from('messages')
       .select('*')
@@ -445,6 +520,23 @@ class ApiService {
   }
 
   async markMessagesRead(conversationId: string, viewerRole: 'USER' | 'VENDOR'): Promise<void> {
+    const session = await this.getCurrentSession();
+    if (session?.user?.role === 'ADMIN') {
+      try {
+        const response = await fetch(`/api/admin/conversations/${conversationId}/read`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ viewerRole })
+        });
+        if (response.ok) return;
+      } catch (err) {
+        console.error("Failed to mark read via admin proxy:", err);
+      }
+    }
+
     const senderRole = viewerRole === 'USER' ? 'VENDOR' : 'USER';
     await supabase
       .from('messages')
@@ -477,4 +569,4 @@ class ApiService {
   }
 }
 
-export const api = new ApiService();
+export const api = new ApiService();
