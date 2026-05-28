@@ -1,14 +1,16 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Vendor } from '../types';
+import { Vendor, Conversation } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users, Inbox } from 'lucide-react';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import ChatInterface from '../components/ChatInterface';
+import { supabase } from '../supabaseClient';
 
 interface VendorDetailProps {
   vendors: Vendor[];
@@ -19,6 +21,14 @@ const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_INQUIRY_TEMPLATE_ID;
 const EMAILJS_ACK_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ACK_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+function timeAgo(dateStr: string) {
+  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(dateStr).toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
 
 const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   const { t, language } = useLanguage();
@@ -38,6 +48,83 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryImageLoading, setIsGalleryImageLoading] = useState(true);
+
+  // Admin message/inquiries states
+  const [adminConvs, setAdminConvs] = useState<Conversation[]>([]);
+  const [selectedAdminConv, setSelectedAdminConv] = useState<Conversation | null>(null);
+  const [adminConvsLoading, setAdminConvsLoading] = useState(false);
+  const [adminUnreadMap, setAdminUnreadMap] = useState<Record<string, number>>({});
+
+  const loadAdminConvs = useCallback(async (isSilent = false) => {
+    if (user?.role !== 'ADMIN' || !vendor?.id) return;
+    try {
+      if (!isSilent) {
+        setAdminConvsLoading(true);
+      }
+      const convs = await api.getConversations(vendor.id, 'VENDOR');
+      setAdminConvs(convs);
+
+      const unreadCounts: Record<string, number> = {};
+      await Promise.all(
+        convs.map(async (conv) => {
+          const msgs = await api.getMessages(conv.id);
+          const unread = msgs.filter(m => m.sender_role === 'USER' && !m.is_read).length;
+          unreadCounts[conv.id] = unread;
+        })
+      );
+      setAdminUnreadMap(unreadCounts);
+    } catch (err) {
+      console.error('Failed to load admin conversations:', err);
+    } finally {
+      if (!isSilent) {
+        setAdminConvsLoading(false);
+      }
+    }
+  }, [user, vendor?.id]);
+
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      loadAdminConvs();
+    }
+  }, [user, loadAdminConvs]);
+
+  useEffect(() => {
+    if (user?.role !== 'ADMIN' || !vendor?.id) return;
+
+    const channel = supabase
+      .channel(`admin-vendor-inbox-${vendor.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => loadAdminConvs(true)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const msg = payload.new as any;
+          if (msg.sender_role === 'USER') {
+            loadAdminConvs(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, vendor?.id, loadAdminConvs]);
+
+  useEffect(() => {
+    if (user?.role !== 'ADMIN' || !vendor?.id) return;
+
+    // Polling fallback to fetch list of conversations when realtime is blocked by RLS
+    const interval = setInterval(() => {
+      loadAdminConvs(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user, vendor?.id, loadAdminConvs]);
 
   useEffect(() => {
     if (activeGallery) {
@@ -479,7 +566,23 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                   ].filter(Boolean))).join(', ')}
                 </span>
                 <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><Calendar className="w-4 h-4 text-sky-500" /> Member since {vendor.joinedAt.split('-')[0]}</span>
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><MessageSquare className="w-4 h-4 text-sky-500" /> {vendor.inquiries || 0} Inquiries</span>
+                {user?.role === 'ADMIN' ? (
+                  <button
+                    onClick={() => {
+                      document.getElementById('admin-inquiries-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex items-center gap-2 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-full border border-sky-100 hover:border-sky-200 text-sky-700 transition-all cursor-pointer font-bold focus:outline-none"
+                    title="Click to view inquiries monitor panel"
+                  >
+                    <MessageSquare className="w-4 h-4 text-sky-500 animate-pulse" /> 
+                    <span>{vendor.inquiries || 0} Inquiries</span>
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
+                    <MessageSquare className="w-4 h-4 text-sky-500" /> 
+                    {vendor.inquiries || 0} Inquiries
+                  </span>
+                )}
               </div>
               <h2 className="text-2xl serif text-slate-800 mb-6">{t('vendorDetail.heritage')}</h2>
               <p className="text-slate-600 text-xl leading-relaxed font-light italic">{vendor.applicationStory || vendor.services?.[0]?.description}</p>
@@ -592,6 +695,129 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
           </div>
         </div>
       </div>
+
+      {/* Admin inquiries section */}
+      {user?.role === 'ADMIN' && (
+        <div id="admin-inquiries-section" className="max-w-7xl mx-auto px-4 mt-20 scroll-mt-24">
+          <div className="bg-white border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-200/50 p-8 md:p-12 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-[0.25em] text-sky-600 mb-2 block font-mono">Administrative Concierge</span>
+                <h2 className="text-3xl serif text-slate-800">Inquiries & Message Monitor</h2>
+                <p className="text-slate-400 text-xs mt-1 leading-relaxed font-light font-sans">
+                  Review conversation logs between users and <span className="font-semibold text-slate-600">{vendor.name}</span>. You can reply directly to assist if the vendor is unresponsive.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 mt-4 md:mt-0 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 font-mono">Live Agent Connection</span>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-0 min-h-[550px] h-[70vh] rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden bg-white">
+              {/* Left Conversation List */}
+              <div className="lg:col-span-1 border-r border-slate-100 flex flex-col h-full min-h-0 overflow-hidden bg-slate-50/20">
+                <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-50 flex items-center gap-2.5 flex-shrink-0 text-slate-400">
+                  <Inbox className="w-4 h-4 text-sky-500" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
+                    {adminConvs.length} Active Conversation{adminConvs.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                  {adminConvsLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 className="w-6 h-6 text-slate-300 animate-spin" />
+                    </div>
+                  ) : adminConvs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
+                      <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-100 flex items-center justify-center mb-4 text-slate-300">
+                        <MessageSquare className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-semibold text-slate-600 font-sans">No inquiry messages yet</p>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed font-light font-sans">
+                        No active conversation tracks or inquiries are active for this partner.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {adminConvs.map(conv => {
+                        const isSelected = selectedAdminConv?.id === conv.id;
+                        const unread = adminUnreadMap[conv.id] || 0;
+                        return (
+                          <button
+                            key={conv.id}
+                            onClick={() => {
+                              setSelectedAdminConv(conv);
+                              setAdminUnreadMap(prev => ({ ...prev, [conv.id]: 0 }));
+                              api.markMessagesRead(conv.id, 'VENDOR');
+                            }}
+                            className={`w-full flex items-center gap-3.5 px-6 py-4 text-left transition-all border-l-4 group outline-none ${
+                              isSelected
+                                ? 'bg-sky-50/70 border-sky-500'
+                                : 'border-transparent hover:bg-slate-50/40 hover:border-slate-100/50'
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-sm ${
+                              isSelected ? 'bg-sky-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
+                            }`}>
+                              {(conv.user_name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <p className={`text-xs font-semibold truncate font-sans ${isSelected ? 'text-sky-700 font-bold' : 'text-slate-800'}`}>
+                                  {conv.user_name || 'Customer'}
+                                </p>
+                                <span className="text-[9px] text-slate-400 flex-shrink-0 font-sans">
+                                  {timeAgo(conv.last_message_at)}
+                                </span>
+                              </div>
+                              {conv.package_name && (
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-sky-500 mb-0.5 truncate font-mono">
+                                  {conv.package_name}
+                                </p>
+                              )}
+                              <p className={`text-[11px] truncate font-sans ${unread > 0 ? 'text-slate-800 font-semibold' : 'text-slate-400 font-light'}`}>
+                                {conv.last_message || 'New inquiry'}
+                              </p>
+                            </div>
+                            <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-all ${
+                              isSelected ? 'text-sky-500' : 'text-slate-300 group-hover:translate-x-0.5 group-hover:text-slate-400'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Chat Panel */}
+              <div className="lg:col-span-2 flex flex-col h-full min-h-0 overflow-hidden bg-white">
+                {selectedAdminConv ? (
+                  <ChatInterface
+                    conversation={selectedAdminConv}
+                    currentUserId={vendor.id}
+                    currentUserRole="VENDOR"
+                    displayName={selectedAdminConv.user_name || 'Customer'}
+                    isAdmin={true}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-8 py-12 bg-slate-50/20">
+                    <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-4 text-slate-300">
+                      <Inbox className="w-6 h-6 text-slate-300" />
+                    </div>
+                    <h3 className="text-lg serif text-slate-700 mb-1">Select a Conversation</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed max-w-xs font-light font-sans">
+                      Choose an active customer inquiry chat from the list on the left to view historical messages and provide support.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

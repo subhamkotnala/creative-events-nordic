@@ -37,6 +37,7 @@ interface ChatInterfaceProps {
   currentUserId: string;
   currentUserRole: 'USER' | 'VENDOR';
   displayName: string; // Name shown at the top (vendor name for users, user name for vendors)
+  isAdmin?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -44,6 +45,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentUserId,
   currentUserRole,
   displayName,
+  isAdmin = false,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -102,6 +104,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     return () => { supabase.removeChannel(channel); };
   }, [conversation.id, currentUserRole, scrollToBottom]);
+
+  // Polling fallback to fetch messages when realtime is blocked by RLS for Admins
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const msgs = await api.getMessages(conversation.id);
+        const uniqueFetched = msgs.map(m => m.id).join(',');
+        const uniqueCurrent = messages.map(m => m.id).join(',');
+        if (uniqueFetched !== uniqueCurrent) {
+          setMessages(msgs);
+          setTimeout(scrollToBottom, 50);
+          
+          // Also mark as read if has unread from customer
+          const unreadFromUser = msgs.filter(m => m.sender_role === 'USER' && !m.is_read).length;
+          if (unreadFromUser > 0) {
+            api.markMessagesRead(conversation.id, currentUserRole);
+          }
+        }
+      } catch (err) {
+        console.warn("Messages polling fallback failed:", err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [conversation.id, isAdmin, messages, currentUserRole, scrollToBottom]);
 
   // Scroll when messages change
   useEffect(() => {

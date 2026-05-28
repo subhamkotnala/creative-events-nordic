@@ -394,11 +394,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {filteredDirectory.map(vendor => (
                       <tr key={vendor.id} className="hover:bg-slate-50 transition-colors group">
                         <td className="px-8 py-6">
-                          <p className="font-semibold text-sm text-slate-900">{vendor.name}</p>
-                          <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">{vendor.services?.[0]?.category || 'Partner'}</p>
+                          <Link 
+                            to={`/vendors/${vendor.id}`} 
+                            className="block group/partner-name focus:outline-none"
+                            title={`View ${vendor.name} Public Profile`}
+                          >
+                            <p className="font-semibold text-sm text-slate-900 group-hover/partner-name:text-sky-600 transition-colors">{vendor.name}</p>
+                            <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest">{vendor.services?.[0]?.category || 'Partner'}</p>
+                          </Link>
                         </td>
-                        <td className="px-8 py-6 text-sm text-slate-500 font-light">{vendor.applicationLocation || vendor.services?.[0]?.location}</td>
-                        <td className="px-8 py-6"><StatusBadge status={vendor.status} /></td>
+                        <td className="px-8 py-6 text-sm text-slate-500 font-light">
+                          <Link 
+                            to={`/vendors/${vendor.id}`} 
+                            className="block hover:text-sky-600 transition-colors focus:outline-none"
+                            title={`View ${vendor.name} Public Profile`}
+                          >
+                            {vendor.applicationLocation || vendor.services?.[0]?.location}
+                          </Link>
+                        </td>
+                        <td className="px-8 py-6">
+                          <Link 
+                            to={`/vendors/${vendor.id}`} 
+                            className="inline-block focus:outline-none"
+                            title={`View ${vendor.name} Public Profile`}
+                          >
+                            <StatusBadge status={vendor.status} />
+                          </Link>
+                        </td>
                         <td className="px-8 py-6">
                           <div className="flex justify-end gap-2">
                             {/* Star Action: Toggle Featured */}

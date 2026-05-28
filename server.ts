@@ -30,6 +30,171 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Admin Authorization helper middleware
+  const requireAdmin = async (req: express.Request, res: express.Response, next: () => void) => {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+
+    if (!serviceRoleKey || !supabaseUrl) {
+      return res.status(500).json({ error: "Supabase configuration missing in server." });
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Missing or invalid authorization header" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Unauthorized token" });
+    }
+
+    // Check user profile role in profiles with robust fallbacks
+    let profile = null;
+
+    // 1. Try by email
+    if (user.email) {
+      const { data: pByEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('email', user.email)
+        .maybeSingle();
+      profile = pByEmail;
+    }
+
+    // 2. Try by auth_id
+    if (!profile) {
+      const { data: pByAuthId } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('auth_id', user.id)
+        .maybeSingle();
+      profile = pByAuthId;
+    }
+
+    // 3. Try by id
+    if (!profile) {
+      const { data: pById } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      profile = pById;
+    }
+
+    if (!profile || profile.role !== 'ADMIN') {
+      return res.status(403).json({ error: "Forbidden. Admin access required." });
+    }
+
+    // Attach supabaseAdmin client to request to reuse
+    (req as any).supabaseAdmin = supabaseAdmin;
+    next();
+  };
+
+  // 1. Fetch conversations for a specific vendor (ignoring regular RLS)
+  app.get("/api/admin/conversations/:vendor_id", requireAdmin, async (req, res) => {
+    const { vendor_id } = req.params;
+    const supabaseAdmin = (req as any).supabaseAdmin;
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('conversations')
+        .select('*')
+        .eq('vendor_id', vendor_id)
+        .order('last_message_at', { ascending: false });
+
+      if (error) throw error;
+      res.json(data || []);
+    } catch (err: any) {
+      console.error("[SERVER] Failed to fetch admin conversations proxy:", err);
+      res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
+  // 2. Fetch messages for a specific conversation (ignoring regular RLS)
+  app.get("/api/admin/conversations/:conversation_id/messages", requireAdmin, async (req, res) => {
+    const { conversation_id } = req.params;
+    const supabaseAdmin = (req as any).supabaseAdmin;
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversation_id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      res.json(data || []);
+    } catch (err: any) {
+      console.error("[SERVER] Failed to fetch admin messages proxy:", err);
+      res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
+  // 3. Mark messages as read for a conversation (ignoring regular RLS)
+  app.post("/api/admin/conversations/:conversation_id/read", requireAdmin, async (req, res) => {
+    const { conversation_id } = req.params;
+    const { viewerRole } = req.body;
+    const supabaseAdmin = (req as any).supabaseAdmin;
+
+    try {
+      const senderRole = viewerRole === 'USER' ? 'VENDOR' : 'USER';
+      const { error } = await supabaseAdmin
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversation_id)
+        .eq('sender_role', senderRole)
+        .eq('is_read', false);
+
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("[SERVER] Failed to mark read via admin proxy:", err);
+      res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
+  // 4. Send Message (ignoring regular RLS)
+  app.post("/api/admin/messages", requireAdmin, async (req, res) => {
+    const { conversationId, senderId, senderRole, content } = req.body;
+    const supabaseAdmin = (req as any).supabaseAdmin;
+
+    try {
+      const { data: message, error: selectError } = await supabaseAdmin
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: senderId,
+          sender_role: senderRole,
+          content,
+          is_read: false,
+        })
+        .select()
+        .single();
+
+      if (selectError) throw selectError;
+
+      // Update last_message on conversation
+      const { error: updateError } = await supabaseAdmin
+        .from('conversations')
+        .update({
+          last_message: content.length > 80 ? content.slice(0, 80) + '...' : content,
+          last_message_at: new Date().toISOString(),
+        })
+        .eq('id', conversationId);
+
+      if (updateError) throw updateError;
+
+      res.json(message);
+    } catch (err: any) {
+      console.error("[SERVER] Failed to send message via admin proxy:", err);
+      res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
   // API routes FIRST
   app.delete("/api/users/:auth_id", async (req, res) => {
     const { auth_id } = req.params;
