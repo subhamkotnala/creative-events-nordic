@@ -190,7 +190,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-slate-900 text-sm truncate">{displayName}</p>
-          {conversation.package_name && (
+          {conversation.package_name && !isAdmin && (
             <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider truncate">
               {conversation.service_category} · {conversation.package_name}
             </p>

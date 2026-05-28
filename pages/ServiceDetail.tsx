@@ -127,15 +127,14 @@ const ServiceDetail: React.FC<ServiceDetailProps> = ({ vendors }) => {
       await api.sendMessage(conversation.id, user.id, 'USER', inquiryMessage);
       setNewConversationId(conversation.id);
 
-      // 4. Notify admin via email
-      await emailService.sendInquiryNotificationToAdmin(
-        resolvedName,
-        user.email,
-        vendor.name,
-        selectedPackage?.name || 'General Inquiry',
-        formData.date,
-        formData.message
-      );
+      // 4. Notify admin and vendor via email (only user name, message, and package, strictly no contact details)
+      await emailService.sendInquiryEmails({
+        userName: resolvedName,
+        vendorName: vendor.name,
+        vendorEmail: vendor.email,
+        packageName: selectedPackage?.name || 'General Inquiry',
+        message: formData.message.trim(),
+      });
 
       // 5. Increment inquiry count
       if (vendor.id) {

@@ -107,6 +107,7 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [currentVendor, setCurrentVendor] = useState<Vendor | null>(null);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -158,7 +159,7 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
     }
   }, [user, vendors, currentVendor]);
 
-  // 2. Fresh Data Synchronization
+  // 2. Fresh Data Synchronization (polling stats and message counter)
   useEffect(() => {
     const syncFreshData = async () => {
         if (currentVendor?.id) {
@@ -169,6 +170,9 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
                     setCurrentVendor(freshData);
                     updateFormState(freshData);
                 }
+                // Fetch unread count
+                const count = await api.getUnreadCount(currentVendor.id, 'VENDOR');
+                setUnreadCount(count);
             } catch (err) {
                 console.error("Background sync failed:", err);
             } finally {
@@ -179,6 +183,8 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
 
     if (currentVendor?.id) {
         syncFreshData();
+        const interval = setInterval(syncFreshData, 10000); // Polling every 10 seconds
+        return () => clearInterval(interval);
     }
   }, [currentVendor?.id]);
 
@@ -448,15 +454,31 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
 
         <Link
           to="/vendor-inbox"
-          className="bg-gradient-to-br from-sky-500 to-sky-700 p-6 rounded-[2rem] shadow-sm flex flex-col gap-4 group hover:shadow-xl hover:shadow-sky-200 transition-all"
+          className="bg-gradient-to-br from-sky-500 to-sky-700 p-6 rounded-[2rem] shadow-sm flex flex-col gap-4 group hover:shadow-xl hover:shadow-sky-200 transition-all relative overflow-hidden"
         >
-            <div className="flex items-center gap-3 text-sky-100">
-                <div className="p-2 bg-white/20 rounded-xl">
-                    <Inbox className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between text-sky-100">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                        <Inbox className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Inbox</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest">Inbox</span>
+                {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full animate-pulse shadow-md">
+                        {unreadCount} new
+                    </span>
+                )}
             </div>
-            <p className="text-sm font-semibold text-white ml-1">View all customer messages &amp; inquiries</p>
+            <div className="flex-grow">
+              <p className="text-sm font-semibold text-white ml-1">View all customer messages &amp; inquiries</p>
+              {unreadCount > 0 ? (
+                <p className="text-[11px] text-sky-100 ml-1 mt-1 font-medium bg-white/10 px-2.5 py-1 rounded-lg inline-block">
+                  You have {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
+                </p>
+              ) : (
+                <p className="text-[11px] text-sky-200 ml-1 mt-1 font-light">No unread messages</p>
+              )}
+            </div>
             <span className="text-[10px] text-sky-200 font-bold uppercase tracking-widest group-hover:translate-x-1 transition-transform inline-block">Open Inbox →</span>
         </Link>
       </div>
