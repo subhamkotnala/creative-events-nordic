@@ -22,7 +22,7 @@ import UserChatbox from './components/UserChatbox';
 import { api } from './services/api';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox } from 'lucide-react';
+import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook } from 'lucide-react';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -155,8 +155,18 @@ const AppContent: React.FC = () => {
   if (isDataLoading || isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <Loader2 className="w-12 h-12 text-sky-600 animate-spin mb-4" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Syncing with Creative Cloud...</p>
+        <div className="flex flex-col items-center text-center px-4 animate-fade-in">
+          <div className="relative flex items-center justify-center mb-6">
+            <div className="w-16 h-16 rounded-full border border-slate-200 absolute animate-ping opacity-25"></div>
+            <div className="w-12 h-12 rounded-full border-2 border-slate-200 border-t-sky-600 animate-spin"></div>
+          </div>
+          <span className="font-brand text-base sm:text-lg font-extrabold uppercase tracking-[0.25em] text-slate-900 mb-1 ml-[0.25em]">
+            Creative Events
+          </span>
+          <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-slate-400">
+            Nordic Marketplace Hub
+          </p>
+        </div>
       </div>
     );
   }
@@ -369,6 +379,38 @@ const AppContent: React.FC = () => {
             />
           </div>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">Nordic Marketplace Hub</p>
+          <div className="flex justify-center gap-6 mt-6 mb-2">
+            <a 
+              href="https://www.linkedin.com/company/creativeventsnordic/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-slate-400 hover:text-slate-900 transition-colors"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="w-5 h-5" />
+            </a>
+            <a 
+              href="https://www.instagram.com/creativeventsnordic?igsh=MXh2ZjdhMmd3emJ3ZA%3D%3D&utm_source=qr" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-slate-400 hover:text-slate-900 transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="w-5 h-5" />
+            </a>
+            <a 
+              href="https://www.facebook.com/share/1BcP2w6S9g/?mibextid=wwXIfr" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-slate-400 hover:text-slate-900 transition-colors"
+              aria-label="Facebook"
+            >
+              <Facebook className="w-5 h-5" />
+            </a>
+          </div>
+          <p className="text-[10px] text-slate-400 font-light tracking-wide mt-3">
+            &copy; {new Date().getFullYear()} Creative Events. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

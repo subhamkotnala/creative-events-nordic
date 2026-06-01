@@ -243,14 +243,19 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
           ))
         ) : (
           <div className="col-span-full py-12 text-center max-w-2xl mx-auto">
-            <p className="text-slate-600 serif text-2xl italic mb-12 leading-relaxed">
-              {language === 'sv' 
-                ? 'Ingen tjänst tillgänglig. Du kan fylla i formuläret nedan för en anpassad tjänst' 
-                : 'No service available, you can fill the form for a custom service'}
-            </p>
+            <div className="mb-12 space-y-3">
+              <h2 className="text-3xl serif text-slate-900">
+                {language === 'sv' ? 'Hittar du inte den perfekta matchningen?' : "Can't find the perfect match?"}
+              </h2>
+              <p className="text-slate-500 text-sm max-w-lg mx-auto leading-relaxed">
+                {language === 'sv' 
+                  ? 'Berätta vad du behöver så hjälper vi dig att komma i kontakt med rätt eventleverantör.' 
+                  : "Tell us what you need and we'll help connect you with the right event professional."}
+              </p>
+            </div>
             
-            <div className="bg-slate-50 border border-slate-100 p-8 sm:p-12 rounded-[2.5rem] shadow-xl text-left">
-              <h3 className="text-2xl serif mb-6 text-slate-900">{t('home.contactTitle')}</h3>
+            <div className="bg-white border border-slate-200 shadow-xl shadow-slate-200/50 p-8 sm:p-12 rounded-[2.5rem] text-left">
+              <h3 className="text-2xl serif mb-6 text-slate-900 text-center sm:text-left">{t('home.contactTitle')}</h3>
               
               {formSubmitted ? (
                 <div className="py-12 text-center animate-fade-in">
@@ -262,79 +267,81 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
                 </div>
               ) : (
                 <form onSubmit={handleContactSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.visionLabel')}</label>
-                    <input 
-                      type="text" required
-                      value={contactForm.vision}
-                      onChange={(e) => setContactForm({...contactForm, vision: e.target.value})}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
-                      placeholder={t('home.visionPlaceholder')} 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.emailLabel')}</label>
-                     <input 
-                       type="email" required
-                       value={contactForm.email}
-                       onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
-                       placeholder="your@email.com" 
-                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Telefonnummer' : 'Phone Number'}</label>
-                     <input 
-                       type="tel" required
-                       value={contactForm.phone}
-                       onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
-                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
-                       placeholder="+46 70 123 45 67" 
-                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Antal gäster' : 'Guest Capacity'}</label>
-                     <input 
-                       type="number" required
-                       value={contactForm.capacity}
-                       onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
-                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none text-slate-900 placeholder:text-slate-400" 
-                       placeholder="e.g. 150" 
-                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Kategori' : 'Category'}</label>
-                     <select 
-                       required
-                       value={contactForm.category}
-                       onChange={(e) => setContactForm({...contactForm, category: e.target.value})}
-                       className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none cursor-pointer ${contactForm.category ? 'text-slate-900' : 'text-slate-400'}`}
-                     >
-                       <option value="" disabled className="text-slate-400">{language === 'sv' ? 'Välj kategori...' : 'Select a category...'}</option>
-                       {Object.values(VendorCategory).map(cat => (
-                         <option key={cat} value={cat} className="text-slate-900">{t(`categories.${cat}`) || cat}</option>
-                       ))}
-                     </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Evenemangsdatum' : 'Event Date'}</label>
-                     <input 
-                       type="date" required
-                       value={contactForm.eventDate}
-                       onChange={(e) => setContactForm({...contactForm, eventDate: e.target.value})}
-                       className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-slate-900 outline-none ${contactForm.eventDate ? 'text-slate-900' : 'text-slate-400'}`} 
-                     />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.visionLabel')}</label>
+                      <input 
+                        type="text" required
+                        value={contactForm.vision}
+                        onChange={(e) => setContactForm({...contactForm, vision: e.target.value})}
+                        className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-1 focus:ring-sky-500 hover:border-slate-300 transition-all outline-none text-slate-900 placeholder:text-slate-400" 
+                        placeholder={t('home.visionPlaceholder')} 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t('home.emailLabel')}</label>
+                       <input 
+                         type="email" required
+                         value={contactForm.email}
+                         onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                         className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-1 focus:ring-sky-500 hover:border-slate-300 transition-all outline-none text-slate-900 placeholder:text-slate-400" 
+                         placeholder="your@email.com" 
+                       />
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Telefonnummer' : 'Phone Number'}</label>
+                       <input 
+                         type="tel" required
+                         value={contactForm.phone}
+                         onChange={(e) => setContactForm({...contactForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '')})}
+                         className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-1 focus:ring-sky-500 hover:border-slate-300 transition-all outline-none text-slate-900 placeholder:text-slate-400" 
+                         placeholder="+46 70 123 45 67" 
+                       />
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Antal gäster' : 'Guest Capacity'}</label>
+                       <input 
+                         type="number" required
+                         value={contactForm.capacity}
+                         onChange={(e) => setContactForm({...contactForm, capacity: e.target.value})}
+                         className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-1 focus:ring-sky-500 hover:border-slate-300 transition-all outline-none text-slate-900 placeholder:text-slate-400" 
+                         placeholder="e.g. 150" 
+                       />
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Kategori' : 'Category'}</label>
+                       <select 
+                         required
+                         value={contactForm.category}
+                         onChange={(e) => setContactForm({...contactForm, category: e.target.value})}
+                         className={`w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-1 focus:ring-sky-500 hover:border-slate-300 transition-all outline-none cursor-pointer ${contactForm.category ? 'text-slate-900' : 'text-slate-400'}`}
+                       >
+                         <option value="" disabled className="text-slate-400">{language === 'sv' ? 'Välj kategori...' : 'Select a category...'}</option>
+                         {Object.values(VendorCategory).map(cat => (
+                           <option key={cat} value={cat} className="text-slate-900">{t(`categories.${cat}`) || cat}</option>
+                         ))}
+                       </select>
+                    </div>
+                    
+                    <div className="space-y-2 md:col-span-2">
+                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'sv' ? 'Evenemangsdatum' : 'Event Date'}</label>
+                       <input 
+                         type="date" required
+                         value={contactForm.eventDate}
+                         onChange={(e) => setContactForm({...contactForm, eventDate: e.target.value})}
+                         className={`w-full bg-slate-50/50 border border-slate-200/80 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-1 focus:ring-sky-500 hover:border-slate-300 transition-all outline-none ${contactForm.eventDate ? 'text-slate-900' : 'text-slate-400'}`} 
+                       />
+                    </div>
                   </div>
                   
                   <button 
                     type="submit"
                     disabled={isSending}
-                    className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50"
+                    className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-[0.3em] hover:bg-sky-600 focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all shadow-xl disabled:opacity-50 mt-4"
                   >
                     {isSending ? 'Sending...' : t('home.sendRequest')}
                   </button>
