@@ -25,7 +25,7 @@ export const translations = {
       catering_sub: 'DELICIOUS & COST-EFFECTIVE NORDIC CUISINE',
       planning_sub: 'BUDGET CONCIERGE SERVICES',
       explore: 'Explore',
-      searchPlaceholder: 'Discover Sweden’s budget-friendly event partners. Curated for the savvy planner.'
+      searchPlaceholder: 'Find trusted event vendors across Nordic in minutes.'
     },
     search: {
       category: 'Category',
@@ -58,8 +58,8 @@ export const translations = {
       successBadge: 'Request received by Creative Events HQ'
     },
     explore: {
-      title: 'Sweden Marketplace',
-      sub: 'Discover budget-friendly event services across Swedish regions and select European destinations.'
+      title: 'Nordic Marketplace',
+      sub: 'Discover budget-friendly event services across Nordic regions and select European destinations.'
     },
     vendorDetail: {
       back: 'Back to marketplace',
@@ -200,7 +200,7 @@ export const translations = {
       catering_sub: 'LÄCKER & KOSTNADSEFFEKTIV NORDISK MAT',
       planning_sub: 'BUDGET CONCIERGE-TJÄNSTER',
       explore: 'Utforska',
-      searchPlaceholder: 'Upptäck Sveriges mest prisvärda eventpartners. Handplockat för den medvetna planeraren.'
+      searchPlaceholder: 'Hitta pålitliga eventleverantörer i Norden på några minuter.'
     },
     search: {
       category: 'Kategori',
@@ -233,8 +233,8 @@ export const translations = {
       successBadge: 'Förfrågan mottagen av Creative Events HQ'
     },
     explore: {
-      title: 'Sveriges Marknadsplats',
-      sub: 'Upptäck prisvärda eventtjänster i svenska regioner och utvalda europeiska destinationer.'
+      title: 'Nordisk Marknadsplats',
+      sub: 'Upptäck prisvärda eventtjänster i nordisk regioner och utvalda europeiska destinationer.'
     },
     vendorDetail: {
       back: 'Tillbaka till marknadsplatsen',
