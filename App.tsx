@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Vendor, VendorStatus } from './types';
 import Home from './pages/Home';
@@ -63,6 +63,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode, roles?: string[] }> = 
 };
 
 const AppContent: React.FC = () => {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const { language, setLanguage, t } = useLanguage();
