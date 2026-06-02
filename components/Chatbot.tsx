@@ -142,7 +142,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
     <>
       {/* Proactive Welcome Bubble */}
       {showWelcomeBubble && !isOpen && (
-        <div className="fixed bottom-24 right-4 md:right-6 z-[60] w-[160px] md:w-[260px] bg-white border border-sky-100 p-3 md:p-5 rounded-3xl shadow-2xl shadow-sky-900/10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="fixed bottom-24 right-4 md:right-6 z-[60] w-[200px] sm:w-[240px] md:w-[260px] bg-white border border-sky-100 p-3 md:p-5 rounded-3xl shadow-2xl shadow-sky-900/10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <button 
             onClick={() => setShowWelcomeBubble(false)}
             className="absolute top-2 right-2 p-1 text-slate-300 hover:text-slate-500 transition-colors"
@@ -151,9 +151,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ vendors }) => {
           </button>
           <div className="flex items-center gap-2 mb-1 md:mb-2">
             <Sparkles className="w-3 h-3 text-sky-500" />
-            <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-sky-600">{t('chatbot.badge')}</span>
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-sky-600">{t('chatbot.badge')}</span>
           </div>
-          <p className="text-[10px] md:text-xs text-slate-700 leading-tight md:leading-relaxed font-medium">
+          <p className="text-[11px] sm:text-xs md:text-sm text-slate-700 leading-normal font-medium break-words">
             {t('chatbot.proactive')}
           </p>
           {/* Bubble tail */}

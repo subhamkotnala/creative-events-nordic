@@ -526,7 +526,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
         )}
       </AnimatePresence>
 
-      <div className="h-[65vh] w-full relative overflow-hidden bg-slate-200">
+      <div className="h-[40vh] md:h-[65vh] w-full relative overflow-hidden bg-slate-200">
         <img src={vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} className="w-full h-full object-cover" alt={vendor.name} />
         <button 
           type="button"
@@ -549,38 +549,43 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
           <ArrowLeft className="w-5 h-5 text-slate-900" />
         </button>
       </div>
-      <div className="max-w-7xl mx-auto px-4 -mt-40 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 -mt-20 md:-mt-40 relative z-10">
         <div className="grid lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-12">
-            <div className="bg-white p-12 border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-200/50">
+            <div className="bg-white p-6 sm:p-8 md:p-12 border border-slate-100 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-slate-200/50">
               <span className="text-[10px] uppercase tracking-[0.3em] text-sky-600 font-bold mb-4 block">
                 {vendor.services?.[0]?.category ? t(`categories.${vendor.services[0].category}`) : ''}
               </span>
-              <h1 className="text-6xl serif mb-6 leading-tight">{vendor.name}</h1>
-              <div className="flex flex-wrap items-center gap-8 text-xs font-bold uppercase tracking-widest text-slate-400 mb-10">
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
-                  <MapPin className="w-4 h-4 text-sky-500" /> 
-                  {Array.from(new Set([
-                    vendor.applicationLocation,
-                    ...(vendor.services?.map(s => s.location) || [])
-                  ].filter(Boolean))).join(', ')}
+              <h1 className="text-3xl sm:text-4xl md:text-6xl serif mb-4 md:mb-6 leading-tight break-words">{vendor.name}</h1>
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 md:gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-8 md:mb-10">
+                <span className="flex items-center justify-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl md:rounded-full border border-slate-100 text-center">
+                  <MapPin className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" /> 
+                  <span className="break-words">
+                    {Array.from(new Set([
+                      vendor.applicationLocation,
+                      ...(vendor.services?.map(s => s.location) || [])
+                    ].filter(Boolean))).join(', ')}
+                  </span>
                 </span>
-                <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100"><Calendar className="w-4 h-4 text-sky-500" /> Member since {vendor.joinedAt.split('-')[0]}</span>
+                <span className="flex items-center justify-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl md:rounded-full border border-slate-100 text-center font-bold">
+                  <Calendar className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" /> 
+                  <span>Member since {vendor.joinedAt.split('-')[0]}</span>
+                </span>
                 {user?.role === 'ADMIN' ? (
                   <button
                     onClick={() => {
                       document.getElementById('admin-inquiries-section')?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="flex items-center gap-2 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-full border border-sky-100 hover:border-sky-200 text-sky-700 transition-all cursor-pointer font-bold focus:outline-none"
+                    className="flex items-center justify-center gap-2 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-2xl md:rounded-full border border-sky-100 hover:border-sky-200 text-sky-700 transition-all cursor-pointer font-bold focus:outline-none text-center"
                     title="Click to view inquiries monitor panel"
                   >
-                    <MessageSquare className="w-4 h-4 text-sky-500 animate-pulse" /> 
+                    <MessageSquare className="w-3.5 h-3.5 text-sky-500 animate-pulse flex-shrink-0" /> 
                     <span>{vendor.inquiries || 0} Inquiries</span>
                   </button>
                 ) : (
-                  <span className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
-                    <MessageSquare className="w-4 h-4 text-sky-500" /> 
-                    {vendor.inquiries || 0} Inquiries
+                  <span className="flex items-center justify-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl md:rounded-full border border-slate-100 text-center font-bold">
+                    <MessageSquare className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" /> 
+                    <span>{vendor.inquiries || 0} Inquiries</span>
                   </span>
                 )}
               </div>
@@ -668,7 +673,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
             </div>
           </div>
           <div className="space-y-8">
-             <div className="bg-slate-900 p-10 rounded-[3rem] text-white space-y-8 sticky top-24 shadow-2xl shadow-slate-900/30">
+             <div className="bg-slate-900 p-6 sm:p-8 md:p-10 rounded-[2rem] md:rounded-[3rem] text-white space-y-8 sticky top-24 shadow-2xl shadow-slate-900/30">
                 {inquirySent ? (
                    <div className="text-center py-10 animate-in fade-in slide-in-from-top-4">
                     <div className="w-20 h-20 bg-green-400/20 rounded-full flex items-center justify-center mx-auto mb-6">

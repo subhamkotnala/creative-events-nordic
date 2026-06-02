@@ -362,9 +362,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <StatCard title={t('admin.valueGrowth')} value="94%" icon={BarChart3} color={{ bg: 'bg-purple-50', text: 'text-purple-600' }} />
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-12">
+        <div className="grid lg:grid-cols-3 gap-12 min-w-0">
           {/* Left Column: Review Queue & Directory */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-12 min-w-0">
 
             <section className="space-y-6">
               <div className="flex justify-between items-center px-2">
@@ -380,9 +380,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   />
                 </div>
               </div>
-              <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50">
+              <div className="bg-white border border-slate-200 rounded-[2.5rem] max-h-[350px] md:max-h-none overflow-y-auto md:overflow-y-visible overflow-x-auto lg:overflow-x-hidden shadow-sm custom-scrollbar">
+                <table className="w-full text-left min-w-[500px] md:min-w-full relative">
+                  <thead className="bg-slate-50 sticky top-0 z-10 shadow-[0_1px_0_rgba(148,163,184,0.06)]">
                     <tr>
                       <th className="px-8 py-6 text-[10px] font-bold uppercase text-slate-400">Partner</th>
                       <th className="px-8 py-6 text-[10px] font-bold uppercase text-slate-400">Region</th>
@@ -501,17 +501,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Right Column */}
-          <div className="space-y-12">
+          <div className="space-y-12 min-w-0">
             <section className="space-y-6">
               <h2 className="text-xl serif px-2">Market Insights</h2>
-              <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 space-y-6 shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 md:p-8 space-y-6 shadow-sm max-h-[180px] md:max-h-none overflow-y-auto md:overflow-y-visible custom-scrollbar">
                 <p className="text-slate-800 font-medium italic serif text-lg leading-relaxed">"{marketInsight}"</p>
               </div>
             </section>
             
             <section className="space-y-6">
               <h2 className="text-xl serif px-2">Admin Notifications</h2>
-              <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 space-y-3">
+              <div className="bg-slate-900 text-white rounded-[2.5rem] p-6 md:p-8 space-y-3 max-h-[250px] md:max-h-none overflow-y-auto md:overflow-y-visible custom-scrollbar">
                     {notifications.length > 0 ? (
                         notifications.map((note, i) => (
                             <div key={`${note}-${i}`} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 py-2 border-b border-white/5 last:border-none flex gap-2">
