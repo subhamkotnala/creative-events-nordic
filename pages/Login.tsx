@@ -84,15 +84,19 @@ const Login: React.FC = () => {
       }
 
       // Step 2: Request reset link from Supabase Auth
+      // NOTE: Do NOT include a hash fragment in redirectTo (e.g. /#/reset-password).
+      // Supabase rejects URLs with hash fragments because it appends its own
+      // auth tokens as a hash. Navigation to /reset-password is handled in
+      // App.tsx via the PASSWORD_RECOVERY auth event instead.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/#/reset-password`
+        redirectTo: `${window.location.origin}`
       });
 
       if (resetError) {
         throw resetError;
       }
 
-      setForgotSuccess('A password reset link has been successfully sent to your email. Please check your inbox and click "Verify Me" in that email to proceed.');
+      setForgotSuccess('A password reset link has been sent to your email. Please check your inbox and click the link to set your new password.');
       setForgotEmail('');
     } catch (err: any) {
       setForgotError(err.message || 'Something went wrong. Please try again.');

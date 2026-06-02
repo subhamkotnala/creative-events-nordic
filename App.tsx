@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Vendor, VendorStatus } from './types';
 import Home from './pages/Home';
@@ -21,6 +21,7 @@ import VendorInbox from './pages/VendorInbox';
 import Chatbot from './components/Chatbot';
 import UserChatbox from './components/UserChatbox';
 import { api } from './services/api';
+import { supabase } from './supabaseClient';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook } from 'lucide-react';
@@ -62,6 +63,7 @@ const PrivateRoute: React.FC<{ children: React.ReactNode, roles?: string[] }> = 
 };
 
 const AppContent: React.FC = () => {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const { language, setLanguage, t } = useLanguage();
@@ -79,6 +81,20 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
+
+  // Handle Supabase PASSWORD_RECOVERY event globally.
+  // When a user clicks the reset email link, Supabase appends auth tokens as
+  // a hash fragment (e.g. #access_token=...&type=recovery). The HashRouter
+  // cannot route to /#/reset-password AND receive tokens simultaneously,
+  // so we listen here and navigate programmatically instead.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password', { replace: true });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
