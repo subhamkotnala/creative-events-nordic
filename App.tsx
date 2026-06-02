@@ -16,6 +16,7 @@ import VendorMockup from './pages/VendorMockup';
 import RegisterVendor from './pages/RegisterVendor';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
+import ResetPassword from './pages/ResetPassword';
 import VendorInbox from './pages/VendorInbox';
 import Chatbot from './components/Chatbot';
 import UserChatbox from './components/UserChatbox';
@@ -340,6 +341,9 @@ const AppContent: React.FC = () => {
             
             {/* New Change Password Route (Accessible to authenticated users) */}
             <Route path="/change-password" element={<PageTransition><PrivateRoute><ChangePassword /></PrivateRoute></PageTransition>} />
+
+            {/* Public Reset Password Route */}
+            <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
 
             {/* Public Vendor Registration - Now separated, restricted for existing vendors */}
             <Route 
