@@ -167,12 +167,15 @@ class ApiService {
     if (!response.ok) {
       let errorMessage = "Deletion failed on server.";
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (e) {
-        // Not a JSON response, maybe get text
         const text = await response.text();
-        errorMessage = `Server Error (${response.status}): ${text || "No response body"}`;
+        try {
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `Server Error (${response.status}): ${text || "No response body"}`;
+        }
+      } catch (e) {
+        errorMessage = `Server Error (${response.status}): Unable to read response body.`;
       }
       throw new Error(errorMessage);
     }
