@@ -160,19 +160,30 @@ class ApiService {
     }
 
     // 1. Call server API to delete from auth.users AND profiles/applications by auth_id
+    const session = await this.getCurrentSession();
     const response = await fetch(`/api/users/${auth_id}`, {
       method: 'DELETE',
+      headers: session?.token ? {
+        'Authorization': `Bearer ${session.token}`,
+      } : undefined,
     });
     
     if (!response.ok) {
       let errorMessage = "Deletion failed on server.";
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (e) {
-        // Not a JSON response, maybe get text
         const text = await response.text();
-        errorMessage = `Server Error (${response.status}): ${text || "No response body"}`;
+        if (text) {
+          try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = `Server Error (${response.status}): ${text}`;
+          }
+        } else {
+          errorMessage = `Server Error (${response.status}): No response body`;
+        }
+      } catch (e) {
+        errorMessage = e instanceof Error ? e.message : String(e);
       }
       throw new Error(errorMessage);
     }
@@ -569,4 +580,4 @@ class ApiService {
   }
 }
 
-export const api = new ApiService();
+export const api = new ApiService();
