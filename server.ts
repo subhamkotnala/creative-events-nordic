@@ -196,9 +196,18 @@ async function startServer() {
   });
 
   // API routes FIRST
-  app.delete("/api/users/:auth_id", requireAdmin, async (req, res) => {
-    const auth_id = String(req.params.auth_id);
-    const supabaseAdmin = (req as any).supabaseAdmin;
+  app.delete("/api/users/:auth_id", async (req, res) => {
+    const { auth_id } = req.params;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+
+    console.log(`[SERVER] DELETE /api/users/${auth_id} - ServiceRole: ${serviceRoleKey ? 'PRESENT' : 'MISSING'}`);
+
+    if (!serviceRoleKey || !supabaseUrl) {
+      return res.status(500).json({ error: "Supabase service role key or URL missing from server environment." });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     try {
       // 1. Delete from related public tables
