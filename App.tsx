@@ -141,6 +141,11 @@ const AppContent: React.FC = () => {
     await refreshVendors();
   };
 
+  const toggleVerify = async (id: string) => {
+    await api.toggleVerified(id);
+    await refreshVendors();
+  };
+
   const deleteVendor = async (auth_id: string, id: string) => {
     await api.deleteUser(auth_id, id);
     await refreshVendors();
@@ -514,7 +519,7 @@ const AppContent: React.FC = () => {
             {/* Protected Routes */}
             <Route path="/dashboard" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorDashboard vendors={vendors} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
             <Route path="/profile" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorProfile vendors={vendors} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
-            <Route path="/admin" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminDashboard vendors={vendors} onUpdateStatus={updateStatus} onToggleFeature={toggleFeature} onDeleteVendor={deleteVendor} onUpdateVendor={addVendor} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
+            <Route path="/admin" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminDashboard vendors={vendors} onUpdateStatus={updateStatus} onToggleFeature={toggleFeature} onToggleVerify={toggleVerify} onDeleteVendor={deleteVendor} onUpdateVendor={addVendor} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
             <Route path="/vendor-review" element={<PageTransition><PrivateRoute roles={['ADMIN']}><VendorReview vendors={vendors} onUpdateStatus={updateStatus} /></PrivateRoute></PageTransition>} />
             
             {/* Vendor Inbox */}

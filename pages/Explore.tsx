@@ -4,7 +4,7 @@ import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-do
 import { Vendor, VendorService, VendorCategory, VendorStatus } from '../types';
 import { AVAILABLE_LOCATIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Search, MapPin, Star, Building2, Users, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Star, Building2, Users, ArrowLeft, BadgeCheck } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
 interface ExploreProps {
@@ -213,9 +213,14 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-medium text-slate-400 pb-2">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <Building2 className="w-3 h-3" />
                     <span>by {vendor.name}</span>
+                    {vendor.verified && (
+                      <span className="inline-flex items-center" title="Verified Vendor">
+                        <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/10 stroke-[2.5]" />
+                      </span>
+                    )}
                   </div>
                   <span className="text-slate-300">•</span>
                   <div className="flex items-center gap-1 font-bold text-amber-500">

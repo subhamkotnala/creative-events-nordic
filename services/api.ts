@@ -258,6 +258,21 @@ class ApiService {
     }
   }
 
+  async toggleVerified(id: string): Promise<void> {
+    try {
+      const { data: profile } = await supabase.from('profiles').select('verified').eq('id', id).single();
+      if (profile && 'verified' in profile) {
+        await supabase.from('profiles').update({ verified: !profile.verified }).eq('id', id);
+        localStorage.setItem(`verified_vendor_${id}`, String(!profile.verified));
+        return;
+      }
+    } catch (e) {
+      console.warn("Could not select/update verified column from database", e);
+    }
+    const current = localStorage.getItem(`verified_vendor_${id}`) === 'true';
+    localStorage.setItem(`verified_vendor_${id}`, String(!current));
+  }
+
   async updateProfile(user: UserProfile): Promise<void> {
     const { error } = await supabase
         .from('profiles')
@@ -333,6 +348,7 @@ class ApiService {
           views: p.views || 0,
           inquiries: p.inquiries || 0,
           socials: p.socials || {},
+          verified: p.verified !== undefined ? !!p.verified : (p.is_verified !== undefined ? !!p.is_verified : (localStorage.getItem(`verified_vendor_${p.id}`) === 'true')),
           applicationStory: p.application_story,
           applicationLocation: p.application_location,
           applicationImageUrl: p.application_image_url,
@@ -572,4 +588,4 @@ class ApiService {
   }
 }
 
-export const api = new ApiService();
+export const api = new ApiService();

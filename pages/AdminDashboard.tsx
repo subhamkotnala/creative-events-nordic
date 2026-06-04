@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 import { 
   Check, X, Eye, Clock, Users, CheckCircle2, XCircle, Search, 
   TrendingUp, MoreVertical, MapPin, Mail, Calendar, 
-  ArrowUpRight, Download, ChevronRight, Activity, Sparkles, Shield,
+  ArrowUpRight, Download, ChevronRight, Activity, Sparkles, Shield, BadgeCheck,
   Zap, BarChart3, History, Terminal, Star, Send, Globe, Instagram, Music, Facebook, Tag, Image as ImageIcon,
   Edit, Trash2, PlusCircle, Save, UploadCloud, Camera, Loader2, ExternalLink, Plus, AlertCircle
 } from 'lucide-react';
@@ -60,6 +60,7 @@ interface AdminDashboardProps {
   vendors: Vendor[];
   onUpdateStatus: (id: string, status: VendorStatus) => Promise<any>;
   onToggleFeature: (id: string) => void;
+  onToggleVerify?: (id: string) => void;
   onDeleteVendor: (auth_id: string, id: string) => void;
   onUpdateVendor: (v: Vendor) => void;
   onAddVendor: (v: Vendor) => void;
@@ -69,6 +70,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   vendors, 
   onUpdateStatus, 
   onToggleFeature,
+  onToggleVerify,
   onDeleteVendor,
   onUpdateVendor,
   onAddVendor
@@ -433,16 +435,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <Star className={`w-4 h-4 ${vendor.isFeatured ? 'fill-amber-500' : ''}`} />
                               </button>
                             )}
-                            {vendor.status === VendorStatus.APPROVED && (
-                              <Link 
-                                to={`/vendors/${vendor.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-slate-300 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-all"
-                                title="View Public Profile"
+                             {vendor.status === VendorStatus.APPROVED && (
+                              <button 
+                                onClick={() => {
+                                  if (onToggleVerify) {
+                                    onToggleVerify(vendor.id);
+                                  }
+                                }} 
+                                className={`p-2 rounded-xl transition-all ${
+                                  vendor.verified 
+                                    ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 shadow-inner' 
+                                    : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'
+                                }`}
+                                title={vendor.verified ? 'Unverify Vendor' : 'Verify Vendor'}
                               >
-                                <ExternalLink className="w-4 h-4" />
-                              </Link>
+                                <BadgeCheck className={`w-4 h-4 ${vendor.verified ? 'fill-emerald-600/10' : ''}`} />
+                              </button>
                             )}
 
                             {(vendor.status === VendorStatus.VERIFIED || vendor.status === VendorStatus.PENDING) && (
