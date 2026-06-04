@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users, Inbox } from 'lucide-react';
+import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users, Inbox, BadgeCheck } from 'lucide-react';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatInterface from '../components/ChatInterface';
@@ -556,7 +556,15 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
               <span className="text-[10px] uppercase tracking-[0.3em] text-sky-600 font-bold mb-4 block">
                 {vendor.services?.[0]?.category ? t(`categories.${vendor.services[0].category}`) : ''}
               </span>
-              <h1 className="text-3xl sm:text-4xl md:text-6xl serif mb-4 md:mb-6 leading-tight break-words">{vendor.name}</h1>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl serif mb-4 md:mb-6 leading-tight break-words flex items-center gap-3 sm:gap-4 flex-wrap">
+                <span>{vendor.name}</span>
+                {vendor.verified && (
+                  <span className="inline-flex items-center gap-1.5 text-[10px] bg-emerald-500/10 text-emerald-700 border border-emerald-500/15 px-3 py-1 rounded-full font-sans font-bold uppercase tracking-widest shrink-0 shadow-sm md:text-xs md:px-3.5 md:py-1" title="Verified Vendor">
+                    <BadgeCheck className="w-4 h-4 md:w-4.5 md:h-4.5 text-emerald-600 fill-emerald-600/15 stroke-[2.5]" />
+                    <span>Verified</span>
+                  </span>
+                )}
+              </h1>
               <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 md:gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-8 md:mb-10">
                 <span className="flex items-center justify-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl md:rounded-full border border-slate-100 text-center">
                   <MapPin className="w-3.5 h-3.5 text-sky-500 flex-shrink-0" /> 
