@@ -125,7 +125,7 @@ export const translations = {
       easyToolsSub: 'Manage your profile and inquiries in one place.',
       submitApp: 'Submit Application',
       successTitle: 'Application Received!',
-      successSub: 'We will review your application and get back to you shortly.',
+      successSub: 'We will review your application and get back to you shortly. Please check your inbox (and spam folder) for a verification email to activate your account.',
       backHome: 'Return Home'
     },
     admin: {
@@ -300,7 +300,7 @@ export const translations = {
       easyToolsSub: 'Hantera din profil och förfrågningar på ett ställe.',
       submitApp: 'Skicka Ansökan',
       successTitle: 'Ansökan Mottagen!',
-      successSub: 'Vi kommer att granska din ansökan och återkomma inom kort.',
+      successSub: 'Vi kommer att granska din ansökan och återkomma inom kort. Vänligen kontrollera din e-post (och skräppostmapp) för en verifieringslänk för att aktivera ditt konto.',
       backHome: 'Tillbaka Hem'
     },
     admin: {
