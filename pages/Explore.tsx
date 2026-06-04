@@ -203,7 +203,11 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-xl serif group-hover:text-sky-600 transition-colors leading-tight">{t(`categories.${service.category}`)}</h3>
+                  <h3 className="text-xl serif group-hover:text-sky-600 transition-colors leading-tight">
+                    {service.packages && service.packages.length > 0 && service.packages[0].name 
+                      ? service.packages[0].name 
+                      : t(`categories.${service.category}`)}
+                  </h3>
                   <div className="flex items-center gap-1 text-[10px] text-slate-400 uppercase tracking-widest shrink-0 mt-1.5">
                     <MapPin className="w-3 h-3" /> {service.location || vendor.applicationLocation}
                   </div>
@@ -234,7 +238,7 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
                 {service.packages && service.packages.length > 0 && (
                   <div className="pt-2">
                     <span className="text-xs font-bold text-sky-600 bg-sky-50 px-2 py-1 rounded-md">
-                      {service.packages.length} Packages available
+                      {t(`categories.${service.category}`)}
                     </span>
                   </div>
                 )}
