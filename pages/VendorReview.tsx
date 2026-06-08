@@ -41,6 +41,7 @@ const VendorReview: React.FC<VendorReviewProps> = ({
     action: () => void;
   } | null>(null);
   const [isApproving, setIsApproving] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<{title: string, message: string} | null>(null);
   const [notifications, setNotifications] = useState<string[]>([]);
 
@@ -92,6 +93,7 @@ const VendorReview: React.FC<VendorReviewProps> = ({
       title: 'Decline Application',
       message: `Are you sure you want to decline ${v.name}? This will delete the user from system i.e., he cannot login anymore and cannot be undone.`,
       action: async () => {
+        setIsActionLoading(true);
         try {
             await api.deleteUser(v.auth_id || v.id, v.id);
             onUpdateStatus(v.id, VendorStatus.REJECTED);
@@ -104,6 +106,8 @@ const VendorReview: React.FC<VendorReviewProps> = ({
         } catch (err) {
             console.error("Decline failed:", err);
             alert("Decline failed.");
+        } finally {
+            setIsActionLoading(false);
         }
       }
     });
@@ -196,7 +200,7 @@ const VendorReview: React.FC<VendorReviewProps> = ({
        {/* Confirmation Modal */}
        {confirmAction && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => !isApproving && setConfirmAction(null)} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => !isApproving && !isActionLoading && setConfirmAction(null)} />
           <div className="relative w-full max-w-sm">
              <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full border border-slate-100 text-center animate-in zoom-in-95 duration-200">
                 <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -207,14 +211,14 @@ const VendorReview: React.FC<VendorReviewProps> = ({
                 <div className="space-y-3">
                    <button 
                      onClick={confirmAction.action} 
-                     disabled={isApproving}
-                     className="w-full bg-slate-900 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg flex items-center justify-center gap-2"
+                     disabled={isApproving || isActionLoading}
+                     className="w-full bg-slate-900 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                    >
-                     {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
+                     {isApproving || isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
                    </button>
                    <button 
                      onClick={() => setConfirmAction(null)} 
-                     disabled={isApproving}
+                     disabled={isApproving || isActionLoading}
                      className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
                    >
                      Cancel

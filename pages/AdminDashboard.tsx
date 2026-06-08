@@ -89,6 +89,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<{title: string, message: string} | null>(null);
   const [isApproving, setIsApproving] = useState(false); // Loader state for approval
+  const [isActionLoading, setIsActionLoading] = useState(false); // Loader state for confirmation actions
   const [activeGallery, setActiveGallery] = useState<{ images: string[]; initialIndex: number } | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -97,6 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     title: string;
     message: string;
     action: () => void;
+    isLoading?: boolean;
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -242,7 +244,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       title: 'Delete Partner',
       message: `Are you sure you want to delete ${vendor.name}? This will delete the user from system i.e., he cannot login anymore and cannot be undone.`,
       action: async () => {
-        setIsDeleting(vendor.id);
+        setIsActionLoading(true);
         try {
             await onDeleteVendor(vendor.auth_id || vendor.id, vendor.id);
             setNotifications(prev => [`System: Deleted partner record: ${vendor.name}`, ...prev]);
@@ -251,7 +253,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             console.error("Delete failed:", err);
             alert("Delete failed: " + (err instanceof Error ? err.message : String(err)));
         } finally {
-            setIsDeleting(null);
+            setIsActionLoading(false);
         }
       }
     });
@@ -1019,7 +1021,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Confirmation Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => !isApproving && setConfirmAction(null)} />
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => !isActionLoading && setConfirmAction(null)} />
           <div className="relative w-full max-w-sm">
              <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full border border-slate-100 text-center animate-in zoom-in-95 duration-200">
                 <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1030,14 +1032,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="space-y-3">
                    <button 
                      onClick={confirmAction.action} 
-                     disabled={isApproving}
-                     className="w-full bg-slate-900 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg flex items-center justify-center gap-2"
+                     disabled={isApproving || isActionLoading}
+                     className="w-full bg-slate-900 text-white py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                    >
-                     {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
+                     {isApproving || isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
                    </button>
                    <button 
                      onClick={() => setConfirmAction(null)} 
-                     disabled={isApproving}
+                     disabled={isApproving || isActionLoading}
                      className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
                    >
                      Cancel
