@@ -4,15 +4,17 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export default async function handler(req: any, res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   console.log('[API] delete user route called', { method: req.method, path: req.url });
 
   if (req.method === 'OPTIONS') {
-    res.setHeader('Allow', ['DELETE', 'OPTIONS']);
     return res.status(204).end();
   }
 
   if (req.method !== 'DELETE') {
-    res.setHeader('Allow', ['DELETE', 'OPTIONS']);
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
