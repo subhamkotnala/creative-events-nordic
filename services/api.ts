@@ -160,7 +160,7 @@ class ApiService {
     }
 
     // 1. Call server API to delete from auth.users AND profiles/applications by auth_id
-    const response = await fetch(`/api/users/${auth_id}`, {
+    const response = await fetch(`/api/delete-user?auth_id=${encodeURIComponent(auth_id)}`, {
       method: 'DELETE',
     });
     
