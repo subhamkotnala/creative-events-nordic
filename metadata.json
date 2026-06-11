@@ -1,7 +1,10 @@
 {
   "name": "Remix: Creative Events - Proficient Backend Marketplace",
-  "description": "Secure, role-based marketplace for Sweden\u0027s event vendors. Featuring AI-driven optimization, secure authentication, and proficient data persistence.",
+  "description": "Secure, role-based marketplace for Sweden's event vendors. Featuring AI-driven optimization, secure authentication, and proficient data persistence.",
   "requestFramePermissions": [
     "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }

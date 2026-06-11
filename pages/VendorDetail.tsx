@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import CalendarPicker from '../components/CalendarPicker';
 import emailjs from '@emailjs/browser';
-import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users, Inbox, BadgeCheck } from 'lucide-react';
+import { MapPin, Mail, Calendar, ArrowLeft, Send, X, CheckCircle2, Loader2, User, MessageSquare, ChevronLeft, ChevronRight, Users, Inbox, BadgeCheck, LogIn } from 'lucide-react';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatInterface from '../components/ChatInterface';
@@ -40,6 +40,7 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
   const vendor = vendors.find(v => v.id === id);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [inquirySent, setInquirySent] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', date: '', message: '' });
@@ -255,6 +256,37 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
 
   return (
     <div className="pb-24">
+      {/* Sign-In Prompt Modal */}
+      {showSignInPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowSignInPrompt(false)} />
+          <div className="relative w-full max-w-sm animate-in zoom-in-95 duration-300">
+            <div className="bg-white rounded-[2rem] shadow-2xl p-10 text-center flex flex-col items-center">
+              <button onClick={() => setShowSignInPrompt(false)} className="absolute top-5 right-5 p-2 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-all">
+                <X className="w-4 h-4" />
+              </button>
+              <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mb-5">
+                <MessageSquare className="w-7 h-7 text-sky-600" />
+              </div>
+              <h3 className="text-2xl serif text-slate-900 mb-2">Sign In to Inquire</h3>
+              <p className="text-slate-500 text-sm font-light leading-relaxed mb-8">
+                Create a free account or sign in to send your inquiry directly to <span className="font-semibold text-slate-700">{vendor?.name}</span> and chat in real time.
+              </p>
+              <Link
+                to="/login"
+                state={{ from: location.pathname }}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-[0.2em] hover:bg-sky-600 transition-all shadow-xl mb-3"
+              >
+                <LogIn className="w-4 h-4" /> Sign In
+              </Link>
+              <button onClick={() => setShowSignInPrompt(false)} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => { setIsModalOpen(false); setSelectedPackage(null); }} />
@@ -650,7 +682,15 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                            {service.packages.map(pkg => (
                               <div 
                                 key={pkg.id} 
-                                onClick={() => { setSelectedPackage(pkg); setIsModalOpen(true); }}
+                                onClick={() => {
+                                  if (!user) {
+                                    setSelectedPackage(pkg);
+                                    setShowSignInPrompt(true);
+                                  } else {
+                                    setSelectedPackage(pkg);
+                                    setIsModalOpen(true);
+                                  }
+                                }}
                                 className="bg-slate-50/50 p-6 rounded-[2rem] flex flex-col items-start gap-3 border border-transparent hover:border-slate-200 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer group"
                               >
                                  <div className="flex justify-between items-start w-full">
@@ -672,7 +712,18 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                         </div>
                       )}
                     </div>
-                    <button onClick={() => setIsModalOpen(true)} className="w-full py-4 border border-slate-200 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-slate-900 hover:text-white transition-all shadow-sm mt-auto">
+                    <button 
+                      onClick={() => {
+                        if (!user) {
+                          setSelectedPackage(null);
+                          setShowSignInPrompt(true);
+                        } else {
+                          setSelectedPackage(null);
+                          setIsModalOpen(true);
+                        }
+                      }} 
+                      className="w-full py-4 border border-slate-200 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-slate-900 hover:text-white transition-all shadow-sm mt-auto"
+                    >
                       {t('vendorDetail.inquireNow')}
                     </button>
                   </div>
@@ -698,7 +749,18 @@ const VendorDetail: React.FC<VendorDetailProps> = ({ vendors }) => {
                     <h3 className="text-3xl serif italic">{t('vendorDetail.secureDate')}</h3>
                     <p className="text-slate-400 text-sm font-light leading-relaxed">{t('vendorDetail.sidebarSub')}</p>
                     <div className="space-y-4 pt-4">
-                       <button onClick={() => setIsModalOpen(true)} className="w-full bg-white text-slate-900 font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-500 hover:text-white transition-all shadow-xl shadow-sky-900/40">
+                       <button 
+                        onClick={() => {
+                          if (!user) {
+                            setSelectedPackage(null);
+                            setShowSignInPrompt(true);
+                          } else {
+                            setSelectedPackage(null);
+                            setIsModalOpen(true);
+                          }
+                        }} 
+                        className="w-full bg-white text-slate-900 font-bold py-5 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-sky-500 hover:text-white transition-all shadow-xl shadow-sky-900/40"
+                       >
                         {t('vendorDetail.sendInquiry')}
                        </button>
                     </div>

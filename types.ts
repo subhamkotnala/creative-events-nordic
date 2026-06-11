@@ -120,3 +120,33 @@ export interface Message {
   created_at: string;
   is_read: boolean;
 }
+
+export interface Ad {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  category: string;
+  budget?: number;
+  location?: string;
+  event_date?: string;
+  status: 'OPEN' | 'CLOSED';
+  created_at: string;
+  updated_at: string;
+  // Joined fields (not in DB — enriched client-side)
+  user_name?: string;
+  user_email?: string;
+  reply_count?: number;
+}
+
+export interface AdReply {
+  id: string;
+  ad_id: string;
+  sender_id: string;
+  sender_role: 'USER' | 'VENDOR' | 'ADMIN';
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  // Joined field
+  sender_name?: string;
+}

@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import fs from "fs";
+import { GoogleGenAI } from "@google/genai";
 
 // Load .env file
 dotenv.config();
@@ -192,6 +193,88 @@ async function startServer() {
     } catch (err: any) {
       console.error("[SERVER] Failed to send message via admin proxy:", err);
       res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
+  // Proxy API for sending ad replies (allows ad owner or vendor to reply bypassing RLS)
+  app.post("/api/ad-replies", async (req, res) => {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+
+    if (!serviceRoleKey || !supabaseUrl) {
+      return res.status(500).json({ error: "Supabase configuration missing in server." });
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Missing or invalid authorization header" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Unauthorized token" });
+    }
+
+    const { adId, content, senderId, senderRole } = req.body;
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('ad_replies')
+        .insert({
+          ad_id: adId,
+          sender_id: senderId,
+          sender_role: senderRole,
+          content,
+          is_read: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json(data);
+    } catch (err: any) {
+      console.error("[SERVER] Failed to send ad reply via server proxy:", err);
+      res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
+  // Optimize description with AI
+  app.post("/api/gemini/optimize-description", async (req, res) => {
+    const { title } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: "Title is required for optimization." });
+    }
+
+    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "Gemini API Key is not configured in the environment." });
+    }
+
+    try {
+      const ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: `Request Title: ${title}`,
+        config: {
+          systemInstruction: "You are an assistant for an Event Vendor Marketplace where clients post requests for event services (such as photography, venues, catering, planners). You will receive a request title from the user. Your job is to expand and optimize this request by writing a natural, clear, detailed, and highly engaging request description (approx 2 to 4 sentences). Describe the event needs beautifully to help vendors understand what the client is looking for and write custom offers. Respond with ONLY the optimized description. Do not include any greeting, meta comments, introductory text, markdown bold titles, or conversational words. Speak directly as the client seeking help."
+        }
+      });
+
+      res.json({ description: response.text?.trim() || "" });
+    } catch (err: any) {
+      console.error("[SERVER] Gemini description optimization failed:", err);
+      res.status(500).json({ error: err.message || "Failed to optimize description with AI." });
     }
   });
 
