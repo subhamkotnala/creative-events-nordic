@@ -1,4 +1,4 @@
-import { Vendor, UserProfile, VendorStatus, Session, VendorCategory, Conversation, Message } from '../types';
+import { Vendor, UserProfile, VendorStatus, Session, VendorCategory, Conversation, Message, Ad, AdReply } from '../types';
 import { supabase } from '../supabaseClient';
 
 class ApiService {
@@ -585,6 +585,288 @@ class ApiService {
       .eq('is_read', false);
 
     return count || 0;
+  }
+
+  // --- AD BOARD METHODS ---
+
+  async getAds(filters?: { category?: string; status?: string }): Promise<Ad[]> {
+    let query = supabase
+      .from('ads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (filters?.category) query = query.eq('category', filters.category);
+    if (filters?.status) query = query.eq('status', filters.status);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const ads = data || [];
+
+    // Enrich with user names from profiles
+    const userIds = [...new Set(ads.map((a: any) => a.user_id))];
+    let profileMap: Record<string, string> = {};
+    let emailMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const uuidUserIds = userIds.filter((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+      const emailUserIds = userIds.filter((id: string) => id.includes('@'));
+      
+      let queryByFields = supabase
+        .from('profiles')
+        .select('id, auth_id, business_name, email');
+      
+      let orClauses: string[] = [];
+      const cleanIds = userIds.filter(id => !id.includes('@'));
+      if (cleanIds.length > 0) {
+        orClauses.push(`id.in.(${cleanIds.join(',')})`);
+      }
+      if (uuidUserIds.length > 0) {
+        orClauses.push(`auth_id.in.(${uuidUserIds.join(',')})`);
+      }
+      if (emailUserIds.length > 0) {
+        orClauses.push(`email.in.(${emailUserIds.join(',')})`);
+      }
+      
+      if (orClauses.length > 0) {
+        queryByFields = queryByFields.or(orClauses.join(','));
+      }
+
+      const { data: profiles } = await queryByFields;
+      (profiles || []).forEach((p: any) => {
+        const name = p.business_name || p.email || 'User';
+        profileMap[p.id] = name;
+        if (p.email) {
+          emailMap[p.id] = p.email;
+        }
+        if (p.auth_id) {
+          profileMap[p.auth_id] = name;
+          if (p.email) {
+            emailMap[p.auth_id] = p.email;
+          }
+        }
+        if (p.email) {
+          profileMap[p.email] = name;
+          profileMap[p.email.toLowerCase()] = name;
+          emailMap[p.email] = p.email;
+          emailMap[p.email.toLowerCase()] = p.email;
+        }
+      });
+    }
+
+    return ads.map((a: any) => ({
+      ...a,
+      user_name: profileMap[a.user_id] || a.user_id || 'User',
+      user_email: emailMap[a.user_id] || (a.user_id.includes('@') ? a.user_id : undefined),
+    })) as Ad[];
+  }
+
+  async createAd(data: {
+    title: string;
+    description: string;
+    category: string;
+    budget?: number;
+    location?: string;
+    event_date?: string;
+  }): Promise<Ad> {
+    const session = await this.getCurrentSession();
+    if (!session?.user) throw new Error('Not authenticated');
+
+    const { data: result, error } = await supabase
+      .from('ads')
+      .insert({
+        user_id: session.user.id,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        budget: data.budget || null,
+        location: data.location || null,
+        event_date: data.event_date || null,
+        status: 'OPEN',
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result as Ad;
+  }
+
+  async updateAdStatus(adId: string, status: 'OPEN' | 'CLOSED'): Promise<void> {
+    const { error } = await supabase
+      .from('ads')
+      .update({ status })
+      .eq('id', adId);
+    if (error) throw error;
+  }
+
+  async deleteAd(adId: string): Promise<void> {
+    const { error } = await supabase
+      .from('ads')
+      .delete()
+      .eq('id', adId);
+    if (error) throw error;
+  }
+
+  async getAdReplies(adId: string): Promise<AdReply[]> {
+    const { data, error } = await supabase
+      .from('ad_replies')
+      .select('*')
+      .eq('ad_id', adId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    const replies = data || [];
+
+    // Enrich with sender names
+    const senderIds = [...new Set(replies.map((r: any) => r.sender_id))];
+    let profileMap: Record<string, string> = {};
+    if (senderIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, business_name, email')
+        .in('id', senderIds);
+      (profiles || []).forEach((p: any) => {
+        profileMap[p.id] = p.business_name || p.email || 'Vendor';
+      });
+    }
+
+    return replies.map((r: any) => ({
+      ...r,
+      sender_name: profileMap[r.sender_id] || 'Vendor',
+    })) as AdReply[];
+  }
+
+  async sendAdReply(adId: string, content: string, customSenderId?: string): Promise<AdReply> {
+    const session = await this.getCurrentSession();
+    if (!session?.user) throw new Error('Not authenticated');
+
+    const response = await fetch('/api/ad-replies', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        adId,
+        content,
+        senderId: customSenderId || session.user.id,
+        senderRole: session.user.role
+      })
+    });
+
+    if (!response.ok) {
+      const errInfo = await response.json().catch(() => ({}));
+      throw new Error(errInfo.error || 'Failed to send ad reply');
+    }
+
+    return await response.json() as AdReply;
+  }
+
+  async markAdRepliesRead(adId: string, vendorId?: string): Promise<void> {
+    const session = await this.getCurrentSession();
+    if (!session?.user) return;
+    
+    let query = supabase
+      .from('ad_replies')
+      .update({ is_read: true })
+      .eq('ad_id', adId)
+      .eq('is_read', false);
+      
+    if (session.user.role === 'USER') {
+      if (vendorId) {
+        query = query.eq('sender_id', vendorId).eq('sender_role', 'VENDOR');
+      } else {
+        query = query.eq('sender_role', 'VENDOR');
+      }
+    } else if (session.user.role === 'VENDOR') {
+      query = query.eq('sender_id', session.user.id).eq('sender_role', 'USER');
+    }
+    
+    await query;
+  }
+
+  async getUnreadAdReplies(): Promise<Record<string, number>> {
+    const session = await this.getCurrentSession();
+    if (!session?.user) return {};
+
+    const userId = session.user.id;
+    const role = session.user.role;
+
+    let query = supabase.from('ad_replies').select('ad_id');
+
+    if (role === 'USER') {
+      query = query.eq('sender_role', 'VENDOR').eq('is_read', false);
+    } else if (role === 'VENDOR') {
+      query = query.eq('sender_id', userId).eq('sender_role', 'USER').eq('is_read', false);
+    } else if (role === 'ADMIN') {
+      query = query.eq('is_read', false);
+    } else {
+      return {};
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching unread ad replies:', error);
+      return {};
+    }
+
+    const counts: Record<string, number> = {};
+    (data || []).forEach((item: any) => {
+      counts[item.ad_id] = (counts[item.ad_id] || 0) + 1;
+    });
+
+    return counts;
+  }
+
+  // Returns the list of unique vendor senders for a given ad — for admin to build vendor-wise thread list
+  async getAdReplyVendors(adId: string): Promise<{ sender_id: string; sender_name: string; sender_role: string }[]> {
+    const { data, error } = await supabase
+      .from('ad_replies')
+      .select('sender_id, sender_role')
+      .eq('ad_id', adId);
+
+    if (error) throw error;
+    const replies = data || [];
+
+    // Unique sender_ids
+    const seen = new Set<string>();
+    const unique = replies.filter((r: any) => {
+      if (seen.has(r.sender_id)) return false;
+      seen.add(r.sender_id);
+      return true;
+    });
+
+    if (unique.length === 0) return [];
+
+    const senderIds = unique.map((r: any) => r.sender_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, business_name, email')
+      .in('id', senderIds);
+
+    const profileMap: Record<string, string> = {};
+    (profiles || []).forEach((p: any) => {
+      profileMap[p.id] = p.business_name || p.email || 'Vendor';
+    });
+
+    return unique.map((r: any) => ({
+      sender_id: r.sender_id,
+      sender_role: r.sender_role,
+      sender_name: profileMap[r.sender_id] || 'Vendor',
+    }));
+  }
+
+  async optimizeDescription(title: string): Promise<string> {
+    const res = await fetch("/api/gemini/optimize-description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to optimize description with AI.");
+    }
+    const data = await res.json();
+    return data.description;
   }
 }
 

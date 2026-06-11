@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Vendor, VendorStatus, VendorCategory, VendorService } from '../types';
+import { Vendor, VendorStatus, VendorCategory, VendorService, Ad, AdReply } from '../types';
+import AdReplyChat from '../components/AdReplyChat';
 import { analyzeVendorApplication, getMarketInsights } from '../services/geminiService';
 import { api } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -12,8 +13,10 @@ import {
   TrendingUp, MoreVertical, MapPin, Mail, Calendar, 
   ArrowUpRight, Download, ChevronRight, Activity, Sparkles, Shield, BadgeCheck,
   Zap, BarChart3, History, Terminal, Star, Send, Globe, Instagram, Music, Facebook, Tag, Image as ImageIcon,
-  Edit, Trash2, PlusCircle, Save, UploadCloud, Camera, Loader2, ExternalLink, Plus, AlertCircle
+  Edit, Trash2, PlusCircle, Save, UploadCloud, Camera, Loader2, ExternalLink, Plus, AlertCircle,
+  Lock, MessageSquare
 } from 'lucide-react';
+
 
 // EmailJS Configuration
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
@@ -79,6 +82,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [marketInsight, setMarketInsight] = useState<string>('Analyzing market patterns...');
   const [notifications, setNotifications] = useState<string[]>([]);
+
+  // --- Ad Board Monitor state ---
+  const [adminAds, setAdminAds] = useState<Ad[]>([]);
+  const [adminAdsLoading, setAdminAdsLoading] = useState(false);
+  const [adminAdsLoaded, setAdminAdsLoaded] = useState(false);
+  const [selectedAdForAdmin, setSelectedAdForAdmin] = useState<Ad | null>(null);
+  const [adminAdVendors, setAdminAdVendors] = useState<{ sender_id: string; sender_name: string; sender_role: string }[]>([]);
+  const [selectedAdVendorId, setSelectedAdVendorId] = useState<string | null>(null);
+  const [isAdBoardOpen, setIsAdBoardOpen] = useState(false);
+  const [adStatusLoading, setAdStatusLoading] = useState<string | null>(null);
+  const [adDeleteLoading, setAdDeleteLoading] = useState<string | null>(null);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -535,6 +549,306 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </section>
           </div>
         </div>
+
+        {/* ── Ad Board Monitor ─────────────────────────────────────────────── */}
+        <div className="mt-16">
+          <div className="flex items-center justify-between mb-6 px-2">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl serif">Ad Board Monitor</h2>
+              {adminAds.length > 0 && (
+                <span className="bg-violet-100 text-violet-700 text-[9px] font-bold px-2.5 py-1 rounded-full tracking-widest uppercase">
+                  {adminAds.length} Requests
+                </span>
+              )}
+            </div>
+            <button
+              onClick={async () => {
+                if (!isAdBoardOpen) {
+                  setAdminAdsLoading(true);
+                  setIsAdBoardOpen(true);
+                  try {
+                    const { api: apiImport } = await import('../services/api');
+                    const data = await apiImport.getAds();
+                    setAdminAds(data);
+                    setAdminAdsLoaded(true);
+                  } catch (e) { console.error(e); }
+                  finally { setAdminAdsLoading(false); }
+                } else {
+                  setIsAdBoardOpen(false);
+                  setSelectedAdForAdmin(null);
+                  setSelectedAdVendorId(null);
+                }
+              }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                isAdBoardOpen
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-200'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-700'
+              }`}
+            >
+              {isAdBoardOpen ? 'Hide Board' : 'View Ad Board'}
+            </button>
+          </div>
+
+          {isAdBoardOpen && (
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden">
+              {adminAdsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
+                </div>
+              ) : adminAds.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <p className="text-sm text-slate-400 font-medium">No ad requests posted yet.</p>
+                </div>
+              ) : selectedAdForAdmin ? (
+                /* ── Selected Ad Detail View (admin) ── */
+                <div className="flex flex-col lg:flex-row" style={{ minHeight: '520px' }}>
+                  {/* Left: Ad info + vendor list */}
+                  <div className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col">
+                    <div className="px-6 py-4 border-b border-slate-100 flex-shrink-0">
+                      <button
+                        onClick={() => { setSelectedAdForAdmin(null); setSelectedAdVendorId(null); setAdminAdVendors([]); }}
+                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-violet-700 transition-colors mb-3"
+                      >
+                        <ArrowUpRight className="w-3.5 h-3.5 rotate-[-135deg]" /> Back to list
+                      </button>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        <span className="px-2.5 py-1 bg-violet-100 text-violet-700 text-[9px] font-bold uppercase tracking-widest rounded-full">
+                          {selectedAdForAdmin.category}
+                        </span>
+                        <span className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-full ${
+                          selectedAdForAdmin.status === 'OPEN' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {selectedAdForAdmin.status}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-900 leading-snug mb-1">{selectedAdForAdmin.title}</p>
+                      <p className="text-xs text-slate-400 line-clamp-3">{selectedAdForAdmin.description}</p>
+                      <p className="text-[10px] text-slate-400 mt-2">By: <span className="font-semibold">{selectedAdForAdmin.user_name}</span></p>
+                    </div>
+
+                    {/* Admin Actions */}
+                    <div className="px-6 py-4 border-b border-slate-100 flex-shrink-0 flex gap-2">
+                      <button
+                        disabled={adStatusLoading === selectedAdForAdmin.id}
+                        onClick={async () => {
+                          setAdStatusLoading(selectedAdForAdmin.id);
+                          const newStatus = selectedAdForAdmin.status === 'OPEN' ? 'CLOSED' : 'OPEN';
+                          try {
+                            const { api: apiRef } = await import('../services/api');
+                            await apiRef.updateAdStatus(selectedAdForAdmin.id, newStatus);
+                            const updated = { ...selectedAdForAdmin, status: newStatus } as Ad;
+                            setSelectedAdForAdmin(updated);
+                            setAdminAds(prev => prev.map(a => a.id === updated.id ? updated : a));
+                          } catch(e) { console.error(e); }
+                          finally { setAdStatusLoading(null); }
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${
+                          selectedAdForAdmin.status === 'OPEN'
+                            ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                            : 'bg-green-50 text-green-600 hover:bg-green-100'
+                        } disabled:opacity-50`}
+                      >
+                        {adStatusLoading === selectedAdForAdmin.id
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : selectedAdForAdmin.status === 'OPEN'
+                          ? <><Lock className="w-3 h-3" /> Close</>
+                          : <><Activity className="w-3 h-3" /> Reopen</>}
+                      </button>
+                      <button
+                        disabled={adDeleteLoading === selectedAdForAdmin.id}
+                        onClick={() => {
+                          setConfirmAction({
+                            title: 'Delete Ad Request',
+                            message: `Delete the ad "${selectedAdForAdmin.title}"? This will also remove all vendor replies and cannot be undone.`,
+                            action: async () => {
+                              setAdDeleteLoading(selectedAdForAdmin.id);
+                              try {
+                                const { api: apiRef } = await import('../services/api');
+                                await apiRef.deleteAd(selectedAdForAdmin.id);
+                                setAdminAds(prev => prev.filter(a => a.id !== selectedAdForAdmin.id));
+                                setSelectedAdForAdmin(null);
+                                setSelectedAdVendorId(null);
+                                setConfirmAction(null);
+                              } catch(e) { console.error(e); }
+                              finally { setAdDeleteLoading(null); }
+                            }
+                          });
+                        }}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                      >
+                        {adDeleteLoading === selectedAdForAdmin.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                        Delete
+                      </button>
+                    </div>
+
+                    {/* Vendor thread list */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                      <div className="px-6 py-3">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+                          Vendor Replies ({adminAdVendors.length})
+                        </p>
+                        {adminAdVendors.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">No vendor replies yet.</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {adminAdVendors.map(v => (
+                              <button
+                                key={v.sender_id}
+                                onClick={() => setSelectedAdVendorId(v.sender_id)}
+                                className={`w-full flex items-center gap-2 px-3 py-3 rounded-2xl text-left transition-all border ${
+                                  selectedAdVendorId === v.sender_id
+                                    ? 'bg-violet-50 border-violet-200'
+                                    : 'bg-slate-50 border-transparent hover:border-violet-100 hover:bg-violet-50/50'
+                                }`}
+                              >
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                  {v.sender_name.charAt(0).toUpperCase()}
+                                </div>
+                                <p className={`text-xs font-semibold truncate ${selectedAdVendorId === v.sender_id ? 'text-violet-700' : 'text-slate-700'}`}>
+                                  {v.sender_name}
+                                </p>
+                                <ChevronRight className="w-3 h-3 text-slate-300 ml-auto flex-shrink-0" />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Chat area */}
+                  <div className="flex-1 overflow-hidden">
+                    {selectedAdVendorId ? (
+                      <AdReplyChat
+                        adId={selectedAdForAdmin.id}
+                        currentUserId={''}
+                        currentUserRole="ADMIN"
+                        displayName={adminAdVendors.find(v => v.sender_id === selectedAdVendorId)?.sender_name || 'Vendor'}
+                        filterSenderId={selectedAdVendorId}
+                        isAdmin
+                        readOnly
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-center px-8 py-12">
+                        <div className="w-16 h-16 rounded-full bg-violet-50 border border-violet-100 flex items-center justify-center mb-4">
+                          <MessageSquare className="w-7 h-7 text-violet-300" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-500">Select a vendor thread</p>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed max-w-xs">
+                          Choose a vendor from the left to view their private reply thread for this ad.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* ── Ad List Table ── */
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left min-w-[600px]">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400">Request</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400">Category</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400">Posted By</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase text-slate-400 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {adminAds.map(ad => (
+                        <tr key={ad.id} className="hover:bg-slate-50/80 transition-colors group">
+                          <td className="px-6 py-5">
+                            <p className="text-sm font-semibold text-slate-900 group-hover:text-violet-700 transition-colors line-clamp-1">{ad.title}</p>
+                            <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{ad.description}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="px-2.5 py-1 bg-violet-50 text-violet-600 text-[9px] font-bold uppercase tracking-widest rounded-full">
+                              {ad.category}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-xs text-slate-500 font-medium">{ad.user_name}</td>
+                          <td className="px-6 py-5">
+                            <span className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-full ${
+                              ad.status === 'OPEN' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {ad.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={async () => {
+                                  setSelectedAdForAdmin(ad);
+                                  setSelectedAdVendorId(null);
+                                  setAdminAdVendors([]);
+                                  try {
+                                    const { api: apiRef } = await import('../services/api');
+                                    const vendors = await apiRef.getAdReplyVendors(ad.id);
+                                    setAdminAdVendors(vendors);
+                                  } catch(e) { console.error(e); }
+                                }}
+                                className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all"
+                                title="View Vendor Threads"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                              </button>
+                              <button
+                                disabled={adStatusLoading === ad.id}
+                                onClick={async () => {
+                                  setAdStatusLoading(ad.id);
+                                  const newStatus = ad.status === 'OPEN' ? 'CLOSED' : 'OPEN';
+                                  try {
+                                    const { api: apiRef } = await import('../services/api');
+                                    await apiRef.updateAdStatus(ad.id, newStatus);
+                                    setAdminAds(prev => prev.map(a => a.id === ad.id ? { ...a, status: newStatus } as Ad : a));
+                                  } catch(e) { console.error(e); }
+                                  finally { setAdStatusLoading(null); }
+                                }}
+                                className={`p-2 rounded-xl transition-all disabled:opacity-50 ${
+                                  ad.status === 'OPEN'
+                                    ? 'text-slate-300 hover:text-amber-600 hover:bg-amber-50'
+                                    : 'text-slate-300 hover:text-green-600 hover:bg-green-50'
+                                }`}
+                                title={ad.status === 'OPEN' ? 'Close Ad' : 'Reopen Ad'}
+                              >
+                                {adStatusLoading === ad.id ? <Loader2 className="w-4 h-4 animate-spin" /> : ad.status === 'OPEN' ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
+                              </button>
+                              <button
+                                disabled={adDeleteLoading === ad.id}
+                                onClick={() => {
+                                  setConfirmAction({
+                                    title: 'Delete Ad Request',
+                                    message: `Delete "${ad.title}"? All vendor replies will also be deleted.`,
+                                    action: async () => {
+                                      setAdDeleteLoading(ad.id);
+                                      try {
+                                        const { api: apiRef } = await import('../services/api');
+                                        await apiRef.deleteAd(ad.id);
+                                        setAdminAds(prev => prev.filter(a => a.id !== ad.id));
+                                        setConfirmAction(null);
+                                      } catch(e) { console.error(e); }
+                                      finally { setAdDeleteLoading(null); }
+                                    }
+                                  });
+                                }}
+                                className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50"
+                                title="Delete Ad"
+                              >
+                                {adDeleteLoading === ad.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {/* ── End Ad Board Monitor ──────────────────────────────────────────── */}
+
       </div>
 
       {/* CRUD Management Modal */}

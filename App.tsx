@@ -18,13 +18,14 @@ import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import ResetPassword from './pages/ResetPassword';
 import VendorInbox from './pages/VendorInbox';
+import AdBoard from './pages/AdBoard';
 import Chatbot from './components/Chatbot';
 import UserChatbox from './components/UserChatbox';
 import { api } from './services/api';
 import { supabase } from './supabaseClient';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook, Megaphone } from 'lucide-react';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -73,9 +74,43 @@ const AppContent: React.FC = () => {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [userChatOpen, setUserChatOpen] = useState(false);
   const [userUnreadCount, setUserUnreadCount] = useState(0);
+  const [requestBoardUnreadCount, setRequestBoardUnreadCount] = useState(0);
   
   const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+
+  useEffect(() => {
+    if (!user) {
+      setRequestBoardUnreadCount(0);
+      return;
+    }
+
+    const updateCounts = async () => {
+      try {
+        const counts = await api.getUnreadAdReplies();
+        const total = Object.values(counts).reduce((s, c) => s + c, 0);
+        setRequestBoardUnreadCount(total);
+      } catch (err) {
+        console.error('Failed to get unread ad replies total:', err);
+      }
+    };
+
+    updateCounts();
+
+    const channel = supabase
+      .channel('global-ad-replies')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ad_replies' }, () => {
+        updateCounts();
+      })
+      .subscribe();
+
+    const interval = setInterval(updateCounts, 5000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [user]);
 
   // Scroll to top on route change
   useEffect(() => {
@@ -235,6 +270,14 @@ const AppContent: React.FC = () => {
           <div className="hidden md:flex items-center gap-5 lg:gap-8 text-[11px] font-brand font-bold uppercase tracking-[0.15em] text-slate-700 pt-1 mr-auto ml-12">
             <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">Marketplace</Link>
             <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">Our Vendors</Link>
+            <Link to="/ad-board" className="hover:text-slate-900 transition-colors py-1 flex items-center gap-1.5">
+              <span>Get Quotes</span>
+              {requestBoardUnreadCount > 0 && (
+                <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
+                  {requestBoardUnreadCount}
+                </span>
+              )}
+            </Link>
             {user?.role !== 'VENDOR' && (
               <Link to="/join" className="hover:text-slate-900 transition-colors py-1">Join us</Link>
             )}
@@ -407,6 +450,18 @@ const AppContent: React.FC = () => {
                   >
                     Our Vendors
                   </Link>
+                  <Link 
+                    to="/ad-board" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
+                  >
+                    <span>Get Quotes</span>
+                    {requestBoardUnreadCount > 0 && (
+                      <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
+                        {requestBoardUnreadCount}
+                      </span>
+                    )}
+                  </Link>
                   {user?.role !== 'VENDOR' && (
                     <Link 
                       to="/join" 
@@ -524,6 +579,9 @@ const AppContent: React.FC = () => {
             
             {/* Vendor Inbox */}
             <Route path="/vendor-inbox" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorInbox /></PrivateRoute></PageTransition>} />
+            
+            {/* Ad Request Board — public */}
+            <Route path="/ad-board" element={<PageTransition><AdBoard /></PageTransition>} />
             
             {/* New Change Password Route (Accessible to authenticated users) */}
             <Route path="/change-password" element={<PageTransition><PrivateRoute><ChangePassword /></PrivateRoute></PageTransition>} />
