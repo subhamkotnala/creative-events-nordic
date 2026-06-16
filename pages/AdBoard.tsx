@@ -793,7 +793,7 @@ const AdBoard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-sky-500">Public Board</p>
-                  <h1 className="text-3xl font-light text-slate-900 tracking-tight">Request Board</h1>
+                  <h1 className="text-3xl font-light text-slate-900 tracking-tight">Ad Requests</h1>
                 </div>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed max-w-xl">

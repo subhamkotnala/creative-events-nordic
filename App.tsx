@@ -271,7 +271,7 @@ const AppContent: React.FC = () => {
             <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">Marketplace</Link>
             <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">Our Vendors</Link>
             <Link to="/ad-board" className="hover:text-slate-900 transition-colors py-1 flex items-center gap-1.5">
-              <span>Get Quotes</span>
+              <span>Post Ad</span>
               {requestBoardUnreadCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
                   {requestBoardUnreadCount}
@@ -455,7 +455,7 @@ const AppContent: React.FC = () => {
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
                   >
-                    <span>Get Quotes</span>
+                    <span>Post Ad</span>
                     {requestBoardUnreadCount > 0 && (
                       <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
                         {requestBoardUnreadCount}
