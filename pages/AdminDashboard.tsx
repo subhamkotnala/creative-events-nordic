@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Vendor, VendorStatus, VendorCategory, VendorService, Ad, AdReply } from '../types';
+import { Vendor, VendorStatus, VendorCategory, VendorService, Ad } from '../types';
 import AdReplyChat from '../components/AdReplyChat';
 import { analyzeVendorApplication, getMarketInsights } from '../services/geminiService';
 import { api } from '../services/api';

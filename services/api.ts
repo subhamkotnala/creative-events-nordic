@@ -735,30 +735,25 @@ class ApiService {
     })) as AdReply[];
   }
 
-  async sendAdReply(adId: string, content: string, customSenderId?: string): Promise<AdReply> {
+  async sendAdReply(adId: string, content: string): Promise<AdReply> {
     const session = await this.getCurrentSession();
-    if (!session?.user) throw new Error('Not authenticated');
+    if (!session || !session.user) throw new Error('Not authenticated');
+    const currentUser = session.user;
 
-    const response = await fetch('/api/ad-replies', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        adId,
+    const { data, error } = await supabase
+      .from('ad_replies')
+      .insert({
+        ad_id: adId,
+        sender_id: currentUser.id,
+        sender_role: currentUser.role as 'VENDOR' | 'ADMIN',
         content,
-        senderId: customSenderId || session.user.id,
-        senderRole: session.user.role
+        is_read: false,
       })
-    });
+      .select()
+      .single();
 
-    if (!response.ok) {
-      const errInfo = await response.json().catch(() => ({}));
-      throw new Error(errInfo.error || 'Failed to send ad reply');
-    }
-
-    return await response.json() as AdReply;
+    if (error) throw error;
+    return data as AdReply;
   }
 
   async markAdRepliesRead(adId: string, vendorId?: string): Promise<void> {

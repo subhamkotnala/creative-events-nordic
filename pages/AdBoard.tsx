@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus, Search, X, Loader2, MessageSquare, MapPin,
-  Calendar, DollarSign, Tag, ChevronRight, ArrowLeft,
+  Calendar, Tag, ChevronRight, ArrowLeft,
   RefreshCw, Lock, Unlock, Eye, Send, Clock, CheckCircle2,
   SlidersHorizontal, Megaphone, Trash2, Sparkles
 } from 'lucide-react';
