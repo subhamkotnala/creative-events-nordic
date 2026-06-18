@@ -737,14 +737,15 @@ class ApiService {
 
   async sendAdReply(adId: string, content: string): Promise<AdReply> {
     const session = await this.getCurrentSession();
-    if (!session?.user) throw new Error('Not authenticated');
+    if (!session || !session.user) throw new Error('Not authenticated');
+    const currentUser = session.user;
 
     const { data, error } = await supabase
       .from('ad_replies')
       .insert({
         ad_id: adId,
-        sender_id: session.user.id,
-        sender_role: session.user.role,
+        sender_id: currentUser.id,
+        sender_role: currentUser.role as 'VENDOR' | 'ADMIN',
         content,
         is_read: false,
       })
