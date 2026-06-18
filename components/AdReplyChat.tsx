@@ -162,8 +162,7 @@ const AdReplyChat: React.FC<AdReplyChatProps> = ({
     setInputValue('');
 
     try {
-      const customSenderId = currentUserRole === 'USER' ? filterSenderId : undefined;
-      const newReply = await api.sendAdReply(adId, text, customSenderId);
+      const newReply = await api.sendAdReply(adId, text);
       // Optimistic update
       setReplies(prev => {
         if (prev.find(r => r.id === newReply.id)) return prev;

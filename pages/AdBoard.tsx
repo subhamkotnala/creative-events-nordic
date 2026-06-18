@@ -3,7 +3,7 @@ import {
   Plus, Search, X, Loader2, MessageSquare, MapPin,
   Calendar, Tag, ChevronRight, ArrowLeft,
   RefreshCw, Lock, Unlock, Eye, Send, Clock, CheckCircle2,
-  SlidersHorizontal, Megaphone, Trash2
+  SlidersHorizontal, Megaphone, Trash2, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Ad, AdReply, VendorCategory } from '../types';
