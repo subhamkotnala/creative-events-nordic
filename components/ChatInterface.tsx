@@ -3,6 +3,7 @@ import { Send, Loader2, ShieldAlert } from 'lucide-react';
 import { Message, Conversation } from '../types';
 import { api } from '../services/api';
 import { supabase } from '../supabaseClient';
+import { emailService } from '../services/emailService';
 
 // Contact info filter — blocks phone numbers and email addresses
 const CONTACT_PATTERNS = [
@@ -153,6 +154,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     try {
       await api.sendMessage(conversation.id, currentUserId, currentUserRole, text);
+
+      // Fire-and-forget email notification to the recipient — never blocks the chat
+      (async () => {
+        try {
+          const recipientId = currentUserRole === 'USER' ? conversation.vendor_id : conversation.user_id;
+          const recipientName = currentUserRole === 'USER'
+            ? (conversation.vendor_name || 'Vendor')
+            : (conversation.user_name || 'User');
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', recipientId)
+            .maybeSingle();
+          if (profile?.email) {
+            await emailService.sendMessageNotification({
+              recipientEmail: profile.email,
+              recipientName,
+              senderName: displayName,
+            });
+          }
+        } catch (_) { /* silent — notification failure must never affect chat */ }
+      })();
     } catch (err) {
       console.error('Failed to send message:', err);
       setInputValue(text); // restore on failure
