@@ -12,8 +12,42 @@ import emailjs from '@emailjs/browser';
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "YOUR_PUBLIC_KEY"; 
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || "YOUR_SERVICE_ID"; 
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID || "YOUR_TEMPLATE_ID"; 
+const MESSAGE_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_MESSAGE_TEMPLATE_ID || "template_fa2o7aj";
 
 export const emailService = {
+  /**
+   * Sends a message notification email to the recipient when they receive a new chat message.
+   * Fire-and-forget — never throws; failures are logged silently so the chat is never blocked.
+   */
+  sendMessageNotification: async (params: {
+    recipientEmail: string;
+    recipientName: string;
+    senderName: string;
+  }): Promise<void> => {
+    try {
+      if (PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
+        console.warn("⚠️ EmailJS not configured. Simulating message notification.");
+        console.log(
+          `%c[EMAIL SIMULATION - Message Notification]\n  To: ${params.recipientName} <${params.recipientEmail}>\n  From: ${params.senderName}`,
+          "color: #0ea5e9; font-weight: bold;"
+        );
+        return;
+      }
+      await emailjs.send(
+        SERVICE_ID,
+        MESSAGE_TEMPLATE_ID,
+        {
+          recipient_email: params.recipientEmail,
+          recipient_name: params.recipientName,
+          sender_name: params.senderName,
+        },
+        PUBLIC_KEY
+      );
+    } catch (error) {
+      // Silent fail — email notification must never block the chat
+      console.warn("Message notification email failed (non-critical):", error);
+    }
+  },
   /**
    * Sends a welcome email with login credentials to the vendor.
    */

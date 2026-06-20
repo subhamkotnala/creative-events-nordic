@@ -3,6 +3,7 @@ import { Send, Loader2, ShieldAlert, Lock } from 'lucide-react';
 import { AdReply } from '../types';
 import { api } from '../services/api';
 import { supabase } from '../supabaseClient';
+import { emailService } from '../services/emailService';
 
 // Contact info filter — blocks phone numbers and email addresses (same pattern as ChatInterface)
 const CONTACT_PATTERNS = [
@@ -169,6 +170,33 @@ const AdReplyChat: React.FC<AdReplyChatProps> = ({
         return [...prev, { ...newReply, sender_name: currentUserRole === 'USER' ? 'You' : displayName }];
       });
       setTimeout(scrollToBottom, 50);
+
+      // Fire-and-forget: notify the ad poster when a vendor replies
+      if (currentUserRole === 'VENDOR') {
+        (async () => {
+          try {
+            const { data: ad } = await supabase
+              .from('ads')
+              .select('user_id')
+              .eq('id', adId)
+              .maybeSingle();
+            if (ad?.user_id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('email, business_name')
+                .eq('id', ad.user_id)
+                .maybeSingle();
+              if (profile?.email) {
+                await emailService.sendMessageNotification({
+                  recipientEmail: profile.email,
+                  recipientName: profile.business_name || 'there',
+                  senderName: displayName,
+                });
+              }
+            }
+          } catch (_) { /* silent — notification failure must never affect chat */ }
+        })();
+      }
     } catch (err) {
       console.error('Failed to send ad reply:', err);
       setInputValue(text);
