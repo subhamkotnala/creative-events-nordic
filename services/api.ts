@@ -740,21 +740,44 @@ class ApiService {
     if (!session || !session.user) throw new Error('Not authenticated');
     const currentUser = session.user;
 
-    const { data, error } = await supabase
-      .from('ad_replies')
-      .insert({
+    const insertPayload = {
+      ad_id: adId,
+      sender_id: currentUser.id,
+      sender_role: currentUser.role as 'VENDOR' | 'ADMIN',
+      content,
+      is_read: false,
+    };
+
+    // For USER (ad owner): the SELECT RLS on ad_replies does not cover their own
+    // sent rows — it only surfaces vendor→user replies. Chaining .select().single()
+    // after INSERT would therefore return PGRST116 (0 rows) and throw, making the
+    // UI appear as if the send failed even though the INSERT succeeded.
+    // Fix: insert-only for users, then return a locally constructed AdReply.
+    if (currentUser.role === 'USER') {
+      const { error } = await supabase.from('ad_replies').insert(insertPayload);
+      if (error) throw error;
+      return {
+        id: crypto.randomUUID(),
         ad_id: adId,
         sender_id: currentUser.id,
-        sender_role: currentUser.role as 'VENDOR' | 'ADMIN',
+        sender_role: 'USER',
         content,
         is_read: false,
-      })
+        created_at: new Date().toISOString(),
+      } as AdReply;
+    }
+
+    // For VENDOR and ADMIN: .select().single() works correctly with their RLS policies.
+    const { data, error } = await supabase
+      .from('ad_replies')
+      .insert(insertPayload)
       .select()
       .single();
 
     if (error) throw error;
     return data as AdReply;
   }
+
 
   async markAdRepliesRead(adId: string, vendorId?: string): Promise<void> {
     const session = await this.getCurrentSession();
