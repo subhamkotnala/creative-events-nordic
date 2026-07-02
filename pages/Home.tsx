@@ -235,34 +235,34 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
       </section>
 
       {/* Categories Section - Minimalist Image Cards */}
-      <section className="bg-white py-16">
+      <section className="bg-white py-12">
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
             <div className="max-w-2xl">
-              <h2 className="text-4xl md:text-5xl serif mb-4">
+              <h2 className="text-2xl sm:text-3xl serif mb-2">
                 {t('home.categoriesTitle')}
               </h2>
-              <p className="text-slate-500 font-light text-lg">
+              <p className="text-slate-500 font-light text-sm">
                 {t('home.categoriesSub')}
               </p>
             </div>
-            <Link to="/explore" className="text-slate-900 font-medium text-[11px] uppercase tracking-[0.2em] flex items-center gap-2 hover:opacity-70 transition-opacity border-b pb-1 border-slate-900">
-              {language === 'sv' ? 'Utforska alla' : 'Explore All'} <ArrowRight className="w-4 h-4" />
+            <Link to="/explore" className="text-slate-900 font-medium text-[10px] uppercase tracking-[0.15em] flex items-center gap-1.5 hover:opacity-70 transition-opacity border-b pb-0.5 border-slate-900">
+              {language === 'sv' ? 'Utforska alla' : 'Explore All'} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {CATEGORIES_DATA.map((cat, idx) => (
               <motion.div
                 key={cat.name}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                transition={{ duration: 0.5, delay: idx * 0.08 }}
               >
                 <Link 
                   to={`/explore?category=${cat.name}`}
-                  className="group block relative aspect-square w-full mx-auto overflow-hidden rounded-[1.5rem] bg-slate-100"
+                  className="group block relative aspect-[4/3] w-full mx-auto overflow-hidden rounded-2xl bg-slate-100"
                 >
                   <img 
                     src={cat.image}
@@ -273,16 +273,16 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                   <div className="absolute inset-0 bg-black/20 transition-colors duration-700 group-hover:bg-black/30" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700" />
                   
-                  <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                    <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 border border-white/20">
-                        <cat.icon className="w-4 h-4 text-white" />
+                  <div className="absolute inset-0 p-5 flex flex-col justify-end">
+                    <div className="translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 border border-white/20">
+                        <cat.icon className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <h3 className="text-xl md:text-2xl text-white serif tracking-wide mb-2">
+                      <h3 className="text-lg text-white serif tracking-wide mb-1">
                         {t(`categories.${cat.name}`)}
                       </h3>
                       <div className="overflow-hidden">
-                        <p className="text-white/80 font-mono text-[10px] uppercase tracking-widest translate-y-full group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-75">
+                        <p className="text-white/80 font-mono text-[9px] uppercase tracking-widest translate-y-full group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-75">
                           {language === 'sv' ? 'Utforska' : 'Explore'} →
                         </p>
                       </div>
@@ -296,34 +296,34 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-slate-50 py-20">
+      <section className="bg-slate-50 py-12">
         <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-4xl serif mb-16 text-slate-900">{language === 'sv' ? 'Så fungerar det' : 'How it Works'}</h2>
-          <div className="grid md:grid-cols-3 gap-16">
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
-                <Search className="w-8 h-8" />
+          <h2 className="text-2xl sm:text-3xl serif mb-10 text-slate-900">{language === 'sv' ? 'Så fungerar det' : 'How it Works'}</h2>
+          <div className="grid md:grid-cols-3 gap-10">
+            <div className="space-y-4">
+              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
+                <Search className="w-5 h-5" />
               </div>
-              <h3 className="text-2xl serif italic text-slate-900">{language === 'sv' ? '1. Hitta' : '1. Find'}</h3>
-              <p className="text-slate-500 font-light leading-relaxed">
+              <h3 className="text-lg md:text-xl serif italic text-slate-900">{language === 'sv' ? '1. Hitta' : '1. Find'}</h3>
+              <p className="text-slate-500 font-light text-sm leading-relaxed">
                 {language === 'sv' ? 'Sök igenom Sveriges största urval av lokaler och tjänster för ditt evenemang.' : 'Search through Sweden\'s largest selection of event spaces and services for your event.'}
               </p>
             </div>
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
-                <Send className="w-8 h-8" />
+            <div className="space-y-4">
+              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
+                <Send className="w-5 h-5" />
               </div>
-              <h3 className="text-2xl serif italic text-slate-900">{language === 'sv' ? '2. Kontakta' : '2. Connect'}</h3>
-              <p className="text-slate-500 font-light leading-relaxed">
+              <h3 className="text-lg md:text-xl serif italic text-slate-900">{language === 'sv' ? '2. Kontakta' : '2. Connect'}</h3>
+              <p className="text-slate-500 font-light text-sm leading-relaxed">
                 {language === 'sv' ? 'Skicka förfrågningar direkt till leverantörer och få de bästa erbjudandena.' : 'Send inquiries directly to providers and get the best offers.'}
               </p>
             </div>
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
-                <HeartHandshake className="w-8 h-8" />
+            <div className="space-y-4">
+              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto text-slate-800 border border-slate-200 shadow-sm">
+                <HeartHandshake className="w-5 h-5" />
               </div>
-              <h3 className="text-2xl serif italic text-slate-900">{language === 'sv' ? '3. Fira' : '3. Celebrate'}</h3>
-              <p className="text-slate-500 font-light leading-relaxed">
+              <h3 className="text-lg md:text-xl serif italic text-slate-900">{language === 'sv' ? '3. Fira' : '3. Celebrate'}</h3>
+              <p className="text-slate-500 font-light text-sm leading-relaxed">
                 {language === 'sv' ? 'Boka den perfekta matchen och anordna ett oförglömligt evenemang.' : 'Book the perfect match and host an unforgettable event.'}
               </p>
             </div>
@@ -332,13 +332,13 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
       </section>
 
       {/* Values Section */}
-      <section className="bg-white text-slate-900 py-20 overflow-hidden relative border-y border-slate-100">
+      <section className="bg-white text-slate-900 py-16 overflow-hidden relative border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-12">
-              <div className="space-y-4">
-                <h2 className="text-5xl serif italic leading-tight text-slate-900">{t('home.valuesTitle')}</h2>
-                <p className="text-slate-500 font-light text-xl leading-relaxed">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <h2 className="text-3xl sm:text-4xl serif italic leading-tight text-slate-900">{t('home.valuesTitle')}</h2>
+                <p className="text-slate-500 font-light text-base leading-relaxed">
                   {t('home.valuesSub')}
                 </p>
               </div>
@@ -361,7 +361,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
               </div>
             </div>
 
-            <div className="bg-slate-50 border border-slate-100 p-12 rounded-[3rem] shadow-xl">
+            <div className="bg-slate-50 border border-slate-100 p-8 sm:p-10 rounded-3xl shadow-xl">
                 <h3 className="text-2xl serif mb-6 text-slate-900">{t('home.contactTitle')}</h3>
                 {formSubmitted ? (
                   <div className="py-12 text-center animate-fade-in">
@@ -451,15 +451,15 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
       </section>
 
       {/* Showcase Grid */}
-      <section className="bg-slate-50 py-16">
+      <section className="bg-slate-50 py-12">
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
             <div className="max-w-xl">
-              <h2 className="text-4xl serif mb-4">{t('home.featuredTitle')}</h2>
-              <p className="text-slate-500 font-light">{t('home.featuredSub')}</p>
+              <h2 className="text-2xl sm:text-3xl serif mb-2">{t('home.featuredTitle')}</h2>
+              <p className="text-slate-500 font-light text-sm">{t('home.featuredSub')}</p>
             </div>
-            <Link to="/explore" className="text-slate-900 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 border-b-2 border-slate-900 pb-1 hover:text-slate-600 hover:border-slate-600 transition-colors">
-              {t('home.viewAll')} <ArrowRight className="w-4 h-4" />
+            <Link to="/explore" className="text-slate-900 font-bold text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5 border-b-2 border-slate-900 pb-0.5 hover:text-slate-600 hover:border-slate-600 transition-colors">
+              {t('home.viewAll')} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -467,7 +467,7 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
               featuredPartners.map(vendor => {
                 const primaryService = vendor.services?.[0];
                 return (
-                <Link key={vendor.id} to={`/vendors/${vendor.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="bg-white rounded-[2.5rem] overflow-hidden group shadow-sm hover:shadow-xl transition-all border border-slate-100">
+                <Link key={vendor.id} to={`/vendors/${vendor.id}`} state={{ history: [routerLocation.pathname + routerLocation.search] }} className="bg-white rounded-2xl overflow-hidden group shadow-sm hover:shadow-xl transition-all border border-slate-100">
                   <div className="aspect-[4/3] overflow-hidden">
                     <img 
                       src={primaryService?.imageUrl || primaryService?.imageUrls?.[0] || vendor.applicationImageUrl || vendor.services?.[0]?.imageUrl} 
@@ -476,11 +476,11 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                       alt={vendor.name}
                     />
                   </div>
-                  <div className="p-8">
-                    <p className="text-[10px] uppercase tracking-widest text-slate-800 font-bold mb-2">{primaryService?.category ? t(`categories.${primaryService.category}`) : ''}</p>
-                    <h3 className="text-xl serif mb-2 truncate">{vendor.name}</h3>
-                    <p className="text-slate-500 text-sm font-light leading-relaxed mb-6 line-clamp-2">{primaryService?.description}</p>
-                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest pt-4 border-t border-slate-100">
+                  <div className="p-5">
+                    <p className="text-[9px] uppercase tracking-widest text-slate-800 font-bold mb-1.5">{primaryService?.category ? t(`categories.${primaryService.category}`) : ''}</p>
+                    <h3 className="text-lg serif mb-1 truncate">{vendor.name}</h3>
+                    <p className="text-slate-500 text-xs font-light leading-relaxed mb-4 line-clamp-2">{primaryService?.description}</p>
+                    <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-1 min-w-0">
                         <MapPin className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">
@@ -497,18 +497,18 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                 );
               })
             ) : (
-              <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
-                <p className="text-slate-400 italic serif text-xl">Our featured selection is updated weekly. Check back soon!</p>
+              <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+                <p className="text-slate-400 italic serif text-lg">Our featured selection is updated weekly. Check back soon!</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-16 border-y border-slate-100">
+      <section className="bg-white py-12 border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-16 items-center">
-            <div className="lg:col-span-5 relative min-h-[480px] rounded-[3.5rem] overflow-hidden group">
+          <div className="grid lg:grid-cols-12 gap-10 items-center">
+            <div className="lg:col-span-5 relative min-h-[380px] rounded-3xl overflow-hidden group">
               <img 
                 src="https://images.unsplash.com/photo-1550475056-bdb1b4d3c1b9?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
@@ -522,22 +522,22 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="relative z-10 h-full p-10 flex flex-col justify-between"
+                className="relative z-10 h-full p-8 flex flex-col justify-between"
               >
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">
                     {language === 'sv' ? 'Våra Destinationer' : 'Our Destinations'}
                   </div>
-                  <h2 className="text-5xl md:text-6xl serif italic leading-[1.1] text-white">
+                  <h2 className="text-3xl md:text-4xl serif italic leading-tight text-white">
                     {language === 'sv' ? 'Upptäck charmiga platser i städerna.' : 'Discover charming spaces in the cities.'}
                   </h2>
                 </div>
 
-                <div className="flex items-center gap-6 group cursor-pointer" onClick={() => navigate('/explore')}>
-                  <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transform group-hover:rotate-45 transition-transform duration-500">
-                    <ArrowRight className="w-6 h-6 text-white" />
+                <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/explore')}>
+                  <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transform group-hover:rotate-45 transition-transform duration-500">
+                    <ArrowRight className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-white underline decoration-white/30 underline-offset-8 group-hover:decoration-white transition-all">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-white underline decoration-white/30 underline-offset-8 group-hover:decoration-white transition-all">
                     {language === 'sv' ? 'Se alla städer' : 'View all cities'}
                   </span>
                 </div>
@@ -556,18 +556,18 @@ const Home: React.FC<HomeProps> = ({ vendors }) => {
                   >
                     <Link 
                       to={`/explore?location=${city.name}`}
-                      className={`group block relative py-8 px-6 transition-all duration-500 ${city.hoverBg} -mx-6 rounded-[2.5rem]`}
+                      className={`group block relative py-4 px-5 transition-all duration-500 ${city.hoverBg} -mx-5 rounded-2xl`}
                     >
                       <div className="flex items-center justify-between relative z-10">
-                        <div className="flex items-center gap-12">
-                          <span className="text-slate-300 font-mono text-sm tracking-tighter">0{idx + 1}</span>
-                          <h3 className={`text-2xl md:text-3xl serif italic transition-all duration-500 group-hover:translate-x-4 ${city.color}`}>
+                        <div className="flex items-center gap-6">
+                          <span className="text-slate-300 font-mono text-xs tracking-tighter">0{idx + 1}</span>
+                          <h3 className={`text-xl md:text-2xl serif italic transition-all duration-500 group-hover:translate-x-3 ${city.color}`}>
                             {city.name}
                           </h3>
                         </div>
-                        <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 -translate-x-10 group-hover:translate-x-0 transition-all duration-500">
-                          <div className={`w-12 h-12 rounded-full ${city.accent} text-white flex items-center justify-center shadow-lg shadow-sky-900/10`}>
-                            <ArrowRight className="w-6 h-6" />
+                        <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 -translate-x-6 group-hover:translate-x-0 transition-all duration-500">
+                          <div className={`w-9 h-9 rounded-full ${city.accent} text-white flex items-center justify-center shadow-lg shadow-sky-900/10`}>
+                            <ArrowRight className="w-4 h-4" />
                           </div>
                         </div>
                       </div>
