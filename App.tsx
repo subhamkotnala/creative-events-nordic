@@ -268,10 +268,10 @@ const AppContent: React.FC = () => {
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-5 lg:gap-8 text-[11px] font-brand font-bold uppercase tracking-[0.15em] text-slate-700 pt-1 mr-auto ml-12">
-            <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">Marketplace</Link>
-            <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">Our Vendors</Link>
+            <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">{t('nav.marketplace')}</Link>
+            <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">{t('nav.ourVendors')}</Link>
             <Link to="/ad-board" className="hover:text-slate-900 transition-colors py-1 flex items-center gap-1.5">
-              <span>Post Ad</span>
+              <span>{t('nav.postAd')}</span>
               {requestBoardUnreadCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
                   {requestBoardUnreadCount}
@@ -279,7 +279,7 @@ const AppContent: React.FC = () => {
               )}
             </Link>
             {user?.role !== 'VENDOR' && (
-              <Link to="/join" className="hover:text-slate-900 transition-colors py-1">Join us</Link>
+              <Link to="/join" className="hover:text-slate-900 transition-colors py-1">{t('nav.becomeVendor')}</Link>
             )}
           </div>
 
@@ -330,14 +330,14 @@ const AppContent: React.FC = () => {
                             onClick={() => setIsUserMenuOpen(false)}
                             className={getMenuLinkClass('/admin')}
                           >
-                            <ShieldCheck className="w-4 h-4" /> Admin Panel
+                            <ShieldCheck className="w-4 h-4" /> {t('nav.adminPanel')}
                           </Link>
                           <Link 
                             to="/vendor-review" 
                             onClick={() => setIsUserMenuOpen(false)}
                             className={getMenuLinkClass('/vendor-review')}
                           >
-                            <Clock className="w-4 h-4" /> Vendor Review
+                            <Clock className="w-4 h-4" /> {t('nav.vendorReview')}
                           </Link>
                         </>
                       )}
@@ -348,21 +348,21 @@ const AppContent: React.FC = () => {
                             onClick={() => setIsUserMenuOpen(false)}
                             className={getMenuLinkClass('/dashboard')}
                           >
-                            <ShoppingBag className="w-4 h-4" /> Dashboard
+                            <ShoppingBag className="w-4 h-4" /> {t('nav.dashboard')}
                           </Link>
                           <Link 
                             to="/vendor-inbox" 
                             onClick={() => setIsUserMenuOpen(false)}
                             className={getMenuLinkClass('/vendor-inbox')}
                           >
-                            <Inbox className="w-4 h-4" /> Inbox
+                            <Inbox className="w-4 h-4" /> {t('nav.inbox')}
                           </Link>
                           <Link 
                             to="/profile" 
                             onClick={() => setIsUserMenuOpen(false)}
                             className={getMenuLinkClass('/profile')}
                           >
-                            <Settings className="w-4 h-4" /> Profile
+                            <Settings className="w-4 h-4" /> {t('nav.profile')}
                           </Link>
                         </>
                       )}
@@ -371,16 +371,16 @@ const AppContent: React.FC = () => {
                         onClick={() => setIsUserMenuOpen(false)}
                         className={getMenuLinkClass('/change-password')}
                       >
-                        <Lock className="w-4 h-4" /> Change Password
+                        <Lock className="w-4 h-4" /> {t('nav.changePassword')}
                       </Link>
-                      <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-500 hover:bg-red-50 rounded-2xl"><LogOut className="w-4 h-4" /> Sign Out</button>
+                      <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-500 hover:bg-red-50 rounded-2xl"><LogOut className="w-4 h-4" /> {t('nav.signOut')}</button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
               <Link to="/login" className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg">
-                <LogIn className="w-4 h-4" /> Sign In
+                <LogIn className="w-4 h-4" /> {t('nav.signIn')}
               </Link>
             )}
           </div>
@@ -441,21 +441,21 @@ const AppContent: React.FC = () => {
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
                   >
-                    Marketplace
+                    {t('nav.marketplace')}
                   </Link>
                   <Link 
                     to="/vendors" 
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
                   >
-                    Our Vendors
+                    {t('nav.ourVendors')}
                   </Link>
                   <Link 
                     to="/ad-board" 
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
                   >
-                    <span>Post Ad</span>
+                    <span>{t('nav.postAd')}</span>
                     {requestBoardUnreadCount > 0 && (
                       <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
                         {requestBoardUnreadCount}
@@ -468,7 +468,7 @@ const AppContent: React.FC = () => {
                       onClick={() => setIsMenuOpen(false)}
                       className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
                     >
-                      Join us
+                      {t('nav.becomeVendor')}
                     </Link>
                   )}
                 </div>
@@ -490,14 +490,14 @@ const AppContent: React.FC = () => {
                               onClick={() => setIsMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                             >
-                              <ShieldCheck className="w-4 h-4 text-slate-400" /> Admin Panel
+                              <ShieldCheck className="w-4 h-4 text-slate-400" /> {t('nav.adminPanel')}
                             </Link>
                             <Link 
                               to="/vendor-review" 
                               onClick={() => setIsMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                             >
-                              <Clock className="w-4 h-4 text-slate-400" /> Vendor Review
+                              <Clock className="w-4 h-4 text-slate-400" /> {t('nav.vendorReview')}
                             </Link>
                           </>
                         )}
@@ -508,21 +508,21 @@ const AppContent: React.FC = () => {
                               onClick={() => setIsMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                             >
-                              <ShoppingBag className="w-4 h-4 text-slate-400" /> Dashboard
+                              <ShoppingBag className="w-4 h-4 text-slate-400" /> {t('nav.dashboard')}
                             </Link>
                             <Link 
                               to="/vendor-inbox" 
                               onClick={() => setIsMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                             >
-                              <Inbox className="w-4 h-4 text-slate-400" /> Inbox
+                              <Inbox className="w-4 h-4 text-slate-400" /> {t('nav.inbox')}
                             </Link>
                             <Link 
                               to="/profile" 
                               onClick={() => setIsMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                             >
-                              <Settings className="w-4 h-4 text-slate-400" /> Profile
+                              <Settings className="w-4 h-4 text-slate-400" /> {t('nav.profile')}
                             </Link>
                           </>
                         )}
@@ -531,7 +531,7 @@ const AppContent: React.FC = () => {
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                         >
-                          <Lock className="w-4 h-4 text-slate-400" /> Change Password
+                          <Lock className="w-4 h-4 text-slate-400" /> {t('nav.changePassword')}
                         </Link>
                         
                         <button 
@@ -541,7 +541,7 @@ const AppContent: React.FC = () => {
                           }} 
                           className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl w-full text-left mt-2"
                         >
-                          <LogOut className="w-4 h-4" /> Sign Out
+                          <LogOut className="w-4 h-4" /> {t('nav.signOut')}
                         </button>
                       </div>
                     </div>
@@ -551,7 +551,7 @@ const AppContent: React.FC = () => {
                       onClick={() => setIsMenuOpen(false)}
                       className="flex items-center justify-center gap-2 bg-slate-900 text-white w-full py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-lg"
                     >
-                      <LogIn className="w-4 h-4" /> Sign In
+                      <LogIn className="w-4 h-4" /> {t('nav.signIn')}
                     </Link>
                   )}
                 </div>
