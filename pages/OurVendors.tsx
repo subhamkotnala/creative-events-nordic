@@ -152,10 +152,10 @@ const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
         />
 
         {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-12 pb-10">
+        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-12 pb-16">
 
           {/* Headline */}
-          <div className="max-w-2xl mb-6">
+          <div className="max-w-2xl">
             <h1
               className="text-3xl sm:text-4xl lg:text-[44px] font-bold text-white leading-[1.15] mb-2"
               style={{ fontFamily: "'Playfair Display', serif", letterSpacing: '-0.02em' }}
@@ -167,126 +167,79 @@ const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
               {t('ourVendorsPage.sub')}
             </p>
           </div>
+        </div>
+      </section>
 
-          {/* Search bar */}
-          <div
-            className="flex flex-col sm:flex-row gap-3 items-stretch p-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.97)', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}
+      {/* Search bar — placed outside section to overlap the bottom of the hero, bringing it down slightly */}
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 -mt-10 mb-8">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-3 items-stretch p-3 rounded-2xl"
+          style={{ background: '#ffffff', boxShadow: '0 8px 40px rgba(0,0,0,0.12)', border: '1px solid #e8ecf0' }}
+        >
+          {/* Search input */}
+          <div className="relative min-w-0 sm:col-span-2 lg:col-span-auto lg:flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder={t('ourVendorsPage.searchPlaceholder')}
+              className="w-full pl-11 pr-4 py-[11px] text-sm rounded-xl outline-none text-slate-700 placeholder-slate-400"
+              style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          {/* Category */}
+          <div className="relative w-full lg:w-40 xl:w-44 lg:flex-shrink-0">
+            <select
+              className="w-full appearance-none pl-4 pr-8 py-[11px] text-sm rounded-xl outline-none text-slate-700 cursor-pointer"
+              style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+            >
+              {categories.map(c => (
+                <option key={c} value={c}>{c === 'All' ? t('search.all') : t(`categories.${c}`)}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          </div>
+          {/* Location */}
+          <div className="relative w-full lg:w-40 xl:w-44 lg:flex-shrink-0">
+            <select
+              className="w-full appearance-none pl-4 pr-8 py-[11px] text-sm rounded-xl outline-none text-slate-700 cursor-pointer"
+              style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+            >
+              <option value="All">{t('search.allLocations')}</option>
+              {AVAILABLE_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          </div>
+          {/* Rating */}
+          <div className="relative w-full lg:w-32 xl:w-36 lg:flex-shrink-0">
+            <select
+              className="w-full appearance-none pl-4 pr-8 py-[11px] text-sm rounded-xl outline-none text-slate-700 cursor-pointer"
+              style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
+              value={minRating}
+              onChange={e => setMinRating(Number(e.target.value))}
+            >
+              <option value={0}>{t('search.anyRating')}</option>
+              <option value={4}>{t('search.fourPlus')}</option>
+              <option value={4.5}>{t('search.fourHalfPlus')}</option>
+              <option value={4.8}>4.8+ Stars</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          </div>
+          {/* Search button */}
+          <button
+            id="vendors-search-btn"
+            className="w-full lg:w-auto sm:col-span-2 lg:col-span-auto flex items-center justify-center gap-2 px-6 py-[11px] rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95 lg:flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', boxShadow: '0 2px 12px rgba(2,132,199,0.35)' }}
           >
-            {/* Search input */}
-            <div className="flex-1 relative min-w-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder={t('ourVendorsPage.searchPlaceholder')}
-                className="w-full pl-11 pr-4 py-[11px] text-sm rounded-xl outline-none text-slate-700 placeholder-slate-400"
-                style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-            {/* Category */}
-            <div className="relative sm:w-44 flex-shrink-0">
-              <select
-                className="w-full appearance-none pl-4 pr-8 py-[11px] text-sm rounded-xl outline-none text-slate-700 cursor-pointer"
-                style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-              >
-                {categories.map(c => (
-                  <option key={c} value={c}>{c === 'All' ? t('search.all') : t(`categories.${c}`)}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            </div>
-            {/* Location */}
-            <div className="relative sm:w-44 flex-shrink-0">
-              <select
-                className="w-full appearance-none pl-4 pr-8 py-[11px] text-sm rounded-xl outline-none text-slate-700 cursor-pointer"
-                style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-              >
-                <option value="All">{t('search.allLocations')}</option>
-                {AVAILABLE_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            </div>
-            {/* Rating */}
-            <div className="relative sm:w-36 flex-shrink-0">
-              <select
-                className="w-full appearance-none pl-4 pr-8 py-[11px] text-sm rounded-xl outline-none text-slate-700 cursor-pointer"
-                style={{ background: '#f8fafc', border: '1px solid #e8ecf0' }}
-                value={minRating}
-                onChange={e => setMinRating(Number(e.target.value))}
-              >
-                <option value={0}>{t('search.anyRating')}</option>
-                <option value={4}>{t('search.fourPlus')}</option>
-                <option value={4.5}>{t('search.fourHalfPlus')}</option>
-                <option value={4.8}>4.8+ Stars</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            </div>
-            {/* Search button */}
-            <button
-              id="vendors-search-btn"
-              className="flex items-center justify-center gap-2 px-6 py-[11px] rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95 flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', boxShadow: '0 2px 12px rgba(2,132,199,0.35)' }}
-            >
-              <Search className="w-4 h-4" /> {t('ourVendorsPage.searchButton')}
-            </button>
-          </div>
+            <Search className="w-4 h-4" /> {t('ourVendorsPage.searchButton')}
+          </button>
         </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════════
-          TOP CATEGORIES
-      ══════════════════════════════════════════════════════════════ */}
-      <section className="py-8 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-bold text-slate-900" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-              {t('ourVendorsPage.topCategories')}
-            </h2>
-            <Link
-              to="/explore"
-              className="flex items-center gap-1 text-sm font-semibold transition-colors text-sky-600 hover:text-sky-700"
-            >
-              {t('ourVendorsPage.viewAllCategories')} <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
-            {TOP_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = category === cat.cat || (cat.cat === 'All' && category === 'All');
-              return (
-                <button
-                  key={cat.label}
-                  onClick={() => setCategory(cat.cat)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-200 focus:outline-none hover:shadow-sm"
-                  style={{
-                    border: isActive ? '1.5px solid #0284c7' : '1.5px solid #e8ecf0',
-                    background: isActive ? 'linear-gradient(145deg, #f0f9ff 0%, #e0f2fe 100%)' : '#ffffff',
-                  }}
-                >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center"
-                    style={{ background: isActive ? '#e0f2fe' : '#f8fafc' }}
-                  >
-                    <Icon className="w-5 h-5" style={{ color: isActive ? '#0284c7' : '#0ea5e9' }} />
-                  </div>
-                  <span
-                    className="text-[11px] font-semibold text-center leading-tight"
-                    style={{ color: isActive ? '#0284c7' : '#4b5563' }}
-                  >
-                    {t(cat.tKey)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      </div>
 
       {/* ══════════════════════════════════════════════════════════════
           VENDOR GRID
