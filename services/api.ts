@@ -735,31 +735,62 @@ class ApiService {
     })) as AdReply[];
   }
 
-  async sendAdReply(adId: string, content: string): Promise<AdReply> {
+  async sendAdReply(adId: string, content: string, vendorId?: string): Promise<AdReply> {
     const session = await this.getCurrentSession();
     if (!session || !session.user) throw new Error('Not authenticated');
     const currentUser = session.user;
 
+    const isUser = currentUser.role === 'USER';
+    const finalSenderId = (isUser && vendorId) ? vendorId : currentUser.id;
+
+    if (session.token) {
+      try {
+        const response = await fetch('/api/ad-replies', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            adId,
+            content,
+            senderId: finalSenderId,
+            senderRole: currentUser.role,
+          }),
+        });
+
+        if (response.ok) {
+          return await response.json() as AdReply;
+        } else {
+          const errData = await response.json();
+          console.warn('Failed to send ad reply via server proxy, falling back:', errData.error);
+        }
+      } catch (err) {
+        console.warn('Failed to send ad reply via server proxy, falling back:', err);
+      }
+    }
+
     const insertPayload = {
       ad_id: adId,
-      sender_id: currentUser.id,
-      sender_role: currentUser.role as 'VENDOR' | 'ADMIN',
+      sender_id: finalSenderId,
+      sender_role: currentUser.role as 'USER' | 'VENDOR' | 'ADMIN',
       content,
       is_read: false,
     };
 
+    // Fallback: client-side direct database call
     // For USER (ad owner): the SELECT RLS on ad_replies does not cover their own
     // sent rows — it only surfaces vendor→user replies. Chaining .select().single()
     // after INSERT would therefore return PGRST116 (0 rows) and throw, making the
     // UI appear as if the send failed even though the INSERT succeeded.
     // Fix: insert-only for users, then return a locally constructed AdReply.
-    if (currentUser.role === 'USER') {
+    if (isUser) {
       const { error } = await supabase.from('ad_replies').insert(insertPayload);
       if (error) throw error;
       return {
         id: crypto.randomUUID(),
         ad_id: adId,
-        sender_id: currentUser.id,
+        sender_id: finalSenderId,
         sender_role: 'USER',
         content,
         is_read: false,
@@ -840,7 +871,8 @@ class ApiService {
     const { data, error } = await supabase
       .from('ad_replies')
       .select('sender_id, sender_role')
-      .eq('ad_id', adId);
+      .eq('ad_id', adId)
+      .neq('sender_role', 'USER');
 
     if (error) throw error;
     const replies = data || [];
