@@ -161,7 +161,7 @@ const OurVendors: React.FC<OurVendorsProps> = ({ vendors }) => {
               style={{ fontFamily: "'Playfair Display', serif", letterSpacing: '-0.02em' }}
             >
               {t('ourVendorsPage.titleLine1')}<br />
-              {t('ourVendorsPage.titleLine2')}<span style={{ color: '#0284c7' }}>.</span>
+              {t('ourVendorsPage.titleLine2')}
             </h1>
             <p className="text-white/60 text-sm sm:text-base font-light leading-relaxed">
               {t('ourVendorsPage.sub')}

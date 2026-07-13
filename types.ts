@@ -150,3 +150,12 @@ export interface AdReply {
   // Joined field
   sender_name?: string;
 }
+
+export interface GalleryPhoto {
+  id: string;
+  url: string;
+  caption?: string;
+  location?: string;
+  sort_order?: number;
+  created_at: string;
+}

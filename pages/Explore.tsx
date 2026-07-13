@@ -239,9 +239,9 @@ const Explore: React.FC<ExploreProps> = ({ vendors }) => {
                 style={{ fontFamily: "'Playfair Display', serif", letterSpacing: '-0.02em' }}
               >
                 {language === 'sv' ? (
-                  <>Hitta allt för<br />ditt nästa event<span style={{ color: '#0284c7' }}>.</span></>
+                  <>Hitta allt för<br />ditt nästa event<span style={{ color: '#0284c7' }}></span></>
                 ) : (
-                  <>Find Everything For<br />Your Next Event<span style={{ color: '#0284c7' }}>.</span></>
+                  <>Find Everything For<br />Your Next Event<span style={{ color: '#0284c7' }}></span></>
                 )}
               </h1>
               <p className="text-slate-500 text-base font-light leading-relaxed">

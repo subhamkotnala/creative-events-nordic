@@ -290,7 +290,7 @@ const JoinMarketplace: React.FC<JoinMarketplaceProps> = ({ onJoin }) => {
                     <>Din nästa<br />bokning<br />börjar här</>
                   ) : (
                     <>Your Next<br />Booking<br />Starts Here</>
-                  )}<span style={{ color: '#0284c7' }}>.</span>
+                  )}<span style={{ color: '#0284c7' }}></span>
                 </h1>
                 <p className="text-white/65 text-base md:text-[17px] font-light mb-8 leading-relaxed max-w-sm">
                   {t('join.nordicDescription')}
