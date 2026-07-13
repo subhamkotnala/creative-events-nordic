@@ -19,6 +19,7 @@ import ChangePassword from './pages/ChangePassword';
 import ResetPassword from './pages/ResetPassword';
 import VendorInbox from './pages/VendorInbox';
 import AdBoard from './pages/AdBoard';
+import EventGallery from './pages/EventGallery';
 import Chatbot from './components/Chatbot';
 import UserChatbox from './components/UserChatbox';
 import { api } from './services/api';
@@ -583,6 +584,9 @@ const AppContent: React.FC = () => {
             
             {/* Ad Request Board — public */}
             <Route path="/ad-board" element={<PageTransition><AdBoard /></PageTransition>} />
+
+            {/* Events Gallery — public */}
+            <Route path="/events" element={<PageTransition><EventGallery /></PageTransition>} />
             
             {/* New Change Password Route (Accessible to authenticated users) */}
             <Route path="/change-password" element={<PageTransition><PrivateRoute><ChangePassword /></PrivateRoute></PageTransition>} />
@@ -618,48 +622,75 @@ const AppContent: React.FC = () => {
         />
       )}
       
-      <footer className="bg-white border-t border-slate-200 py-16">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex justify-center items-center mb-6">
-            <img 
-              src="/logo.png" 
-              alt="Logo" 
-              className="h-[110px] w-auto object-contain drop-shadow-sm"
-            />
+      <footer className="bg-slate-900 border-t border-slate-800">
+        {/* Main footer columns */}
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-14">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
+
+            {/* Col 1 — Brand */}
+            <div className="col-span-2 md:col-span-1">
+              <img src="/logo.png" alt="Creative Events" className="h-16 w-auto object-contain mb-4 brightness-200 contrast-0" />
+              <p className="text-slate-400 text-sm font-light leading-relaxed">
+                Connecting people with the best event vendors across Sweden.
+              </p>
+              <div className="flex gap-4 mt-5">
+                <a href="https://www.linkedin.com/company/creativeventsnordic/" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white transition-colors" aria-label="LinkedIn">
+                  <Linkedin className="w-5 h-5" />
+                </a>
+                <a href="https://www.instagram.com/creativeventsnordic?igsh=MXh2ZjdhMmd3emJ3ZA%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white transition-colors" aria-label="Instagram">
+                  <Instagram className="w-5 h-5" />
+                </a>
+                <a href="https://www.facebook.com/share/1BcP2w6S9g/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white transition-colors" aria-label="Facebook">
+                  <Facebook className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Col 2 — Marketplace */}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Marketplace</p>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Browse Vendors', to: '/explore' },
+                  { label: 'All Categories', to: '/explore' },
+                  { label: 'Our Vendors', to: '/vendors' },
+                  { label: 'Popular Cities', to: '/vendors' },
+                ].map(link => (
+                  <li key={link.label}>
+                    <Link to={link.to} className="text-slate-400 text-sm hover:text-white transition-colors font-light">{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Col 3 — Quick Links */}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Quick Links</p>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Marketplace', to: '/explore' },
+                  { label: 'Our Vendors', to: '/vendors' },
+                  { label: 'Post Ad', to: '/ad-board' },
+                  { label: 'Join Us', to: '/join' },
+                  { label: 'Our Events', to: '/events' },
+                ].map(link => (
+                  <li key={link.label}>
+                    <Link to={link.to} className="text-slate-400 text-sm hover:text-white transition-colors font-light">{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">Nordic Marketplace Hub</p>
-          <div className="flex justify-center gap-6 mt-6 mb-2">
-            <a 
-              href="https://www.linkedin.com/company/creativeventsnordic/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-slate-400 hover:text-slate-900 transition-colors"
-              aria-label="LinkedIn"
-            >
-              <Linkedin className="w-5 h-5" />
-            </a>
-            <a 
-              href="https://www.instagram.com/creativeventsnordic?igsh=MXh2ZjdhMmd3emJ3ZA%3D%3D&utm_source=qr" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-slate-400 hover:text-slate-900 transition-colors"
-              aria-label="Instagram"
-            >
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a 
-              href="https://www.facebook.com/share/1BcP2w6S9g/?mibextid=wwXIfr" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-slate-400 hover:text-slate-900 transition-colors"
-              aria-label="Facebook"
-            >
-              <Facebook className="w-5 h-5" />
-            </a>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-slate-800">
+          <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-slate-500 text-xs font-light">
+              &copy; {new Date().getFullYear()} Creative Events. All rights reserved.
+            </p>
+            <p className="text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">Nordic Marketplace Hub</p>
           </div>
-          <p className="text-[10px] text-slate-400 font-light tracking-wide mt-3">
-            &copy; {new Date().getFullYear()} Creative Events. All rights reserved.
-          </p>
         </div>
       </footer>
     </div>

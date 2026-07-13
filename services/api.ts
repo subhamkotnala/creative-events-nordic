@@ -918,6 +918,48 @@ class ApiService {
     const data = await res.json();
     return data.description;
   }
+
+  // ─── Gallery Photos ──────────────────────────────────────────────────────
+
+  async getGalleryPhotos() {
+    const { data, error } = await supabase
+      .from('gallery_photos')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async addGalleryPhoto(photo: { url: string; caption?: string; location?: string }) {
+    const { data, error } = await supabase
+      .from('gallery_photos')
+      .insert([photo])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteGalleryPhoto(id: string) {
+    const { error } = await supabase
+      .from('gallery_photos')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  async uploadGalleryFile(file: File): Promise<string> {
+    const ext = file.name.split('.').pop();
+    const fileName = `gallery_${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('gallery')
+      .upload(fileName, file, { upsert: false });
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from('gallery').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
 }
+
 
 export const api = new ApiService();
