@@ -314,6 +314,41 @@ const Login: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Instant Admin Demo Login Banner */}
+                  <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-100">
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-sky-950">
+                        <ShieldCheck className="w-4 h-4 text-sky-600" /> Admin Demo Access
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-200/70 text-sky-900">
+                        1-Click Access
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+                      Instant login to view the Admin Dashboard, vendor applications, and organized events setup.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsSigningIn(true);
+                        setSignInError(null);
+                        try {
+                          await login('admin@creative.se', 'admin123');
+                          navigate('/admin', { replace: true });
+                        } catch (err: any) {
+                          setSignInError(err.message || 'Login failed.');
+                        } finally {
+                          setIsSigningIn(false);
+                        }
+                      }}
+                      disabled={isSigningIn}
+                      className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                    >
+                      {isSigningIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4 text-sky-400" />}
+                      Log In as Administrator (1-Click)
+                    </button>
+                  </div>
+
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email</label>

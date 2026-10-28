@@ -14,7 +14,7 @@ import {
   ArrowUpRight, Download, ChevronRight, Activity, Sparkles, Shield, BadgeCheck,
   Zap, BarChart3, History, Terminal, Star, Send, Globe, Instagram, Music, Facebook, Tag, Image as ImageIcon,
   Edit, Trash2, PlusCircle, Save, UploadCloud, Camera, Loader2, ExternalLink, Plus, AlertCircle,
-  Lock, MessageSquare
+  Lock, MessageSquare, Store
 } from 'lucide-react';
 
 
@@ -368,7 +368,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* New Partner button removed */}
+            <Link
+              to="/admin/bookings"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+            >
+              <Store className="w-4 h-4" /> Vendor Bookings
+            </Link>
+            <Link
+              to="/admin/events"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-sky-600/25 active:scale-95"
+            >
+              <Calendar className="w-4 h-4" /> Organized Events
+            </Link>
           </div>
         </div>
 
