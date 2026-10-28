@@ -31,6 +31,7 @@ import { supabase } from './supabaseClient';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook, Megaphone, Calendar, Store } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -765,6 +766,7 @@ const App: React.FC = () => (
     <AuthProvider>
       <Router>
         <AppContent />
+        <Analytics />
       </Router>
     </AuthProvider>
   </LanguageProvider>
