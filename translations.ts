@@ -19,6 +19,9 @@ export const translations = {
       signIn: 'Sign In',
       adminPanel: 'Admin Panel',
       vendorReview: 'Vendor Review',
+      organizedEvents: 'Organized Events',
+      vendorBookings: 'Vendor Bookings',
+      adminBookings: 'Stall Bookings Admin',
       inbox: 'Inbox',
       changePassword: 'Change Password'
     },
@@ -340,6 +343,9 @@ export const translations = {
       signIn: 'Logga in',
       adminPanel: 'Administratörspanel',
       vendorReview: 'Granska partners',
+      organizedEvents: 'Arrangerade Evenemang',
+      vendorBookings: 'Utställarbokningar',
+      adminBookings: 'Administrera Bokningar',
       inbox: 'Inkorg',
       changePassword: 'Ändra lösenord'
     },

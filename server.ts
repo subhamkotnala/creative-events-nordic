@@ -10,18 +10,20 @@ import { GoogleGenAI } from "@google/genai";
 // Load .env file
 dotenv.config();
 
-// Fallback for .env.example if .env is missing and we are in dev
-if (process.env.NODE_ENV !== "production") {
-  const examplePath = path.join(process.cwd(), ".env.example");
-  if (fs.existsSync(examplePath)) {
-    const exampleEnv = dotenv.parse(fs.readFileSync(examplePath));
-    for (const key in exampleEnv) {
-      if (!process.env[key] && exampleEnv[key]) {
-        process.env[key] = exampleEnv[key];
-      }
+// Fallback for .env.example if any env variables are missing
+const examplePath = path.join(process.cwd(), ".env.example");
+if (fs.existsSync(examplePath)) {
+  const exampleEnv = dotenv.parse(fs.readFileSync(examplePath));
+  for (const key in exampleEnv) {
+    if (!process.env[key] && exampleEnv[key]) {
+      process.env[key] = exampleEnv[key];
     }
   }
 }
+
+const DEFAULT_SUPABASE_URL = "https://qngqankrmwlxxzdluqhe.supabase.co";
+const DEFAULT_SERVICE_ROLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuZ3FhbmtybXdseHh6ZGx1cWhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODU5Njc0MSwiZXhwIjoyMDk0MTcyNzQxfQ.y9YUixqhELPI_sj-k-1xw8Y3vZOqFJlbinmHW0p0-PM";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,8 +35,8 @@ async function startServer() {
 
   // Admin Authorization helper middleware
   const requireAdmin = async (req: express.Request, res: express.Response, next: () => void) => {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
 
     if (!serviceRoleKey || !supabaseUrl) {
       return res.status(500).json({ error: "Supabase configuration missing in server." });
@@ -198,8 +200,8 @@ async function startServer() {
 
   // Proxy API for sending ad replies (allows ad owner or vendor to reply bypassing RLS)
   app.post("/api/ad-replies", async (req, res) => {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
 
     if (!serviceRoleKey || !supabaseUrl) {
       return res.status(500).json({ error: "Supabase configuration missing in server." });
@@ -281,8 +283,8 @@ async function startServer() {
   // API routes FIRST
   app.delete("/api/users/:auth_id", async (req, res) => {
     const { auth_id } = req.params;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
 
     console.log(`[SERVER] DELETE /api/users/${auth_id} - ServiceRole: ${serviceRoleKey ? 'PRESENT' : 'MISSING'}`);
 

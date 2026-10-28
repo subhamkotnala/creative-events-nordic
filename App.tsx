@@ -20,13 +20,17 @@ import ResetPassword from './pages/ResetPassword';
 import VendorInbox from './pages/VendorInbox';
 import AdBoard from './pages/AdBoard';
 import EventGallery from './pages/EventGallery';
+import AdminOrganizedEvents from './pages/AdminOrganizedEvents';
+import VendorEventBookings from './pages/VendorEventBookings';
+import AdminVendorBookings from './pages/AdminVendorBookings';
 import Chatbot from './components/Chatbot';
 import UserChatbox from './components/UserChatbox';
+import { SEOHead } from './components/SEOHead';
 import { api } from './services/api';
 import { supabase } from './supabaseClient';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook, Megaphone } from 'lucide-react';
+import { User, ShieldCheck, ShoppingBag, Menu, X, Settings, LogOut, Clock, Languages, Loader2, LogIn, Lock, Inbox, Linkedin, Instagram, Facebook, Megaphone, Calendar, Store } from 'lucide-react';
 
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -212,25 +216,29 @@ const AppContent: React.FC = () => {
 
   if (isDataLoading || isAuthLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center text-center px-4 animate-fade-in">
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="w-16 h-16 rounded-full border border-slate-200 absolute animate-ping opacity-25"></div>
-            <div className="w-12 h-12 rounded-full border-2 border-slate-200 border-t-sky-600 animate-spin"></div>
+      <>
+        <SEOHead vendors={vendors} />
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+          <div className="flex flex-col items-center text-center px-4 animate-fade-in">
+            <div className="relative flex items-center justify-center mb-6">
+              <div className="w-16 h-16 rounded-full border border-slate-200 absolute animate-ping opacity-25"></div>
+              <div className="w-12 h-12 rounded-full border-2 border-slate-200 border-t-sky-600 animate-spin"></div>
+            </div>
+            <span className="font-brand text-base sm:text-lg font-extrabold uppercase tracking-[0.25em] text-slate-900 mb-1 ml-[0.25em]">
+              Creative Events
+            </span>
+            <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-slate-400">
+              Nordic Marketplace Hub
+            </p>
           </div>
-          <span className="font-brand text-base sm:text-lg font-extrabold uppercase tracking-[0.25em] text-slate-900 mb-1 ml-[0.25em]">
-            Creative Events
-          </span>
-          <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-slate-400">
-            Nordic Marketplace Hub
-          </p>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-slate-50 overflow-x-hidden w-full">
+      <SEOHead vendors={vendors} />
       <AnimatePresence>
         {isSigningOut && (
           <motion.div
@@ -271,6 +279,7 @@ const AppContent: React.FC = () => {
           <div className="hidden md:flex items-center gap-5 lg:gap-8 text-[11px] font-brand font-bold uppercase tracking-[0.15em] text-slate-700 pt-1 mr-auto ml-12">
             <Link to="/explore" className="hover:text-slate-900 transition-colors py-1">{t('nav.marketplace')}</Link>
             <Link to="/vendors" className="hover:text-slate-900 transition-colors py-1">{t('nav.ourVendors')}</Link>
+            <Link to="/event-bookings" className="hover:text-slate-900 transition-colors py-1">{t('nav.vendorBookings')}</Link>
             <Link to="/ad-board" className="hover:text-slate-900 transition-colors py-1 flex items-center gap-1.5">
               <span>{t('nav.postAd')}</span>
               {requestBoardUnreadCount > 0 && (
@@ -334,6 +343,20 @@ const AppContent: React.FC = () => {
                             <ShieldCheck className="w-4 h-4" /> {t('nav.adminPanel')}
                           </Link>
                           <Link 
+                            to="/admin/events" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/admin/events')}
+                          >
+                            <Calendar className="w-4 h-4" /> {t('nav.organizedEvents')}
+                          </Link>
+                          <Link 
+                            to="/admin/bookings" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/admin/bookings')}
+                          >
+                            <Store className="w-4 h-4" /> {t('nav.adminBookings')}
+                          </Link>
+                          <Link 
                             to="/vendor-review" 
                             onClick={() => setIsUserMenuOpen(false)}
                             className={getMenuLinkClass('/vendor-review')}
@@ -350,6 +373,13 @@ const AppContent: React.FC = () => {
                             className={getMenuLinkClass('/dashboard')}
                           >
                             <ShoppingBag className="w-4 h-4" /> {t('nav.dashboard')}
+                          </Link>
+                          <Link 
+                            to="/event-bookings" 
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={getMenuLinkClass('/event-bookings')}
+                          >
+                            <Store className="w-4 h-4" /> {t('nav.vendorBookings')}
                           </Link>
                           <Link 
                             to="/vendor-inbox" 
@@ -452,6 +482,13 @@ const AppContent: React.FC = () => {
                     {t('nav.ourVendors')}
                   </Link>
                   <Link 
+                    to="/event-bookings" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
+                  >
+                    {t('nav.vendorBookings')}
+                  </Link>
+                  <Link 
                     to="/ad-board" 
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 rounded-2xl"
@@ -494,6 +531,20 @@ const AppContent: React.FC = () => {
                               <ShieldCheck className="w-4 h-4 text-slate-400" /> {t('nav.adminPanel')}
                             </Link>
                             <Link 
+                              to="/admin/events" 
+                              onClick={() => setIsMenuOpen(false)}
+                              className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
+                            >
+                              <Calendar className="w-4 h-4 text-slate-400" /> {t('nav.organizedEvents')}
+                            </Link>
+                            <Link 
+                              to="/admin/bookings" 
+                              onClick={() => setIsMenuOpen(false)}
+                              className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
+                            >
+                              <Store className="w-4 h-4 text-slate-400" /> {t('nav.adminBookings')}
+                            </Link>
+                            <Link 
                               to="/vendor-review" 
                               onClick={() => setIsMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
@@ -510,6 +561,13 @@ const AppContent: React.FC = () => {
                               className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                             >
                               <ShoppingBag className="w-4 h-4 text-slate-400" /> {t('nav.dashboard')}
+                            </Link>
+                            <Link 
+                              to="/event-bookings" 
+                              onClick={() => setIsMenuOpen(false)}
+                              className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
+                            >
+                              <Store className="w-4 h-4 text-slate-400" /> {t('nav.vendorBookings')}
                             </Link>
                             <Link 
                               to="/vendor-inbox" 
@@ -576,6 +634,8 @@ const AppContent: React.FC = () => {
             <Route path="/dashboard" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorDashboard vendors={vendors} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
             <Route path="/profile" element={<PageTransition><PrivateRoute roles={['VENDOR']}><VendorProfile vendors={vendors} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
             <Route path="/admin" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminDashboard vendors={vendors} onUpdateStatus={updateStatus} onToggleFeature={toggleFeature} onToggleVerify={toggleVerify} onDeleteVendor={deleteVendor} onUpdateVendor={addVendor} onAddVendor={addVendor} /></PrivateRoute></PageTransition>} />
+            <Route path="/admin/events" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminOrganizedEvents /></PrivateRoute></PageTransition>} />
+            <Route path="/admin/bookings" element={<PageTransition><PrivateRoute roles={['ADMIN']}><AdminVendorBookings /></PrivateRoute></PageTransition>} />
             <Route path="/vendor-review" element={<PageTransition><PrivateRoute roles={['ADMIN']}><VendorReview vendors={vendors} onUpdateStatus={updateStatus} /></PrivateRoute></PageTransition>} />
             
             {/* Vendor Inbox */}
@@ -584,8 +644,11 @@ const AppContent: React.FC = () => {
             {/* Ad Request Board — public */}
             <Route path="/ad-board" element={<PageTransition><AdBoard /></PageTransition>} />
 
-            {/* Events Gallery — public */}
+            {/* Events Gallery & Stall Bookings — public */}
             <Route path="/events" element={<PageTransition><EventGallery /></PageTransition>} />
+            <Route path="/event-bookings" element={<PageTransition><VendorEventBookings /></PageTransition>} />
+            <Route path="/book-stall" element={<Navigate to="/event-bookings" replace />} />
+            <Route path="/vendor-bookings" element={<Navigate to="/event-bookings" replace />} />
             
             {/* New Change Password Route (Accessible to authenticated users) */}
             <Route path="/change-password" element={<PageTransition><PrivateRoute><ChangePassword /></PrivateRoute></PageTransition>} />
@@ -669,6 +732,7 @@ const AppContent: React.FC = () => {
                 {[
                   { label: 'Marketplace', to: '/explore' },
                   { label: 'Our Vendors', to: '/vendors' },
+                  { label: 'Event Stall Bookings', to: '/event-bookings' },
                   { label: 'Post Ad', to: '/ad-board' },
                   { label: 'Join Us', to: '/join' },
                   { label: 'Our Events', to: '/events' },

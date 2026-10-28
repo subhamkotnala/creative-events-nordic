@@ -15,7 +15,7 @@ import {
   Plus, Sparkles, Check, Clock, XCircle, 
   Instagram, Facebook, Camera, UploadCloud,
   Globe, Music, Loader2, Trash2, CheckCircle2, AlertCircle,
-  Eye, BarChart3, MousePointerClick, MessageSquare, X, Settings, Inbox
+  Eye, BarChart3, MousePointerClick, MessageSquare, X, Settings, Inbox, Store
 } from 'lucide-react';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number = 0.5): Promise<string> => {
@@ -406,15 +406,24 @@ const VendorDashboard: React.FC<VendorDashboardProps> = ({ vendors, onAddVendor 
           </div>
           <p className="text-slate-500">Overview of your metrics and service categories.</p>
         </div>
-        {currentVendor && (
-          <Link 
-            to={`/vendors/${currentVendor.id}`} 
-            className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-50 hover:text-sky-600 hover:border-sky-100 transition-all shadow-sm group"
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/event-bookings"
+            className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-600 transition-all shadow-sm"
           >
-            <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            {t('vendorDashboard.preview')}
+            <Store className="w-4 h-4 text-sky-400" />
+            Book Event Stall
           </Link>
-        )}
+          {currentVendor && (
+            <Link 
+              to={`/vendors/${currentVendor.id}`} 
+              className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-sky-50 hover:text-sky-600 hover:border-sky-100 transition-all shadow-sm group"
+            >
+              <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              {t('vendorDashboard.preview')}
+            </Link>
+          )}
+        </div>
       </div>
       
       {submitError && (
