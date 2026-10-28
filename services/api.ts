@@ -23,241 +23,10 @@ export const DEFAULT_MAP_PRESETS = [
 ];
 
 export function generateDefaultVendorTables(eventId?: string): VendorTable[] {
-  return [
-    {
-      id: 'table-p-01',
-      table_number: 'P-01',
-      zone: 'Premium Front Entrance',
-      size: '3.0m x 2.0m Corner Showcase',
-      price_sek: 3500,
-      power_included: true,
-      status: 'AVAILABLE',
-      location_description: 'Facing Main Welcome Arch & Registration',
-      map_coordinates: { x: 20, y: 35 }
-    },
-    {
-      id: 'table-p-02',
-      table_number: 'P-02',
-      zone: 'Premium Front Entrance',
-      size: '3.0m x 2.0m Prime Island',
-      price_sek: 3500,
-      power_included: true,
-      status: 'AVAILABLE',
-      location_description: 'Boulevard Entrance Left Flank',
-      map_coordinates: { x: 34, y: 35 }
-    },
-    {
-      id: 'table-f-01',
-      table_number: 'F-01',
-      zone: 'Food & Sweets Bazaar',
-      size: '2.5m x 1.5m Culinary Table',
-      price_sek: 2800,
-      power_included: true,
-      status: 'AVAILABLE',
-      location_description: 'Culinary Court North Wing with water supply',
-      map_coordinates: { x: 50, y: 35 }
-    },
-    {
-      id: 'table-f-02',
-      table_number: 'F-02',
-      zone: 'Food & Sweets Bazaar',
-      size: '2.5m x 1.5m Culinary Table',
-      price_sek: 2800,
-      power_included: true,
-      status: 'AVAILABLE',
-      location_description: 'Culinary Court Central Alley',
-      map_coordinates: { x: 65, y: 35 }
-    },
-    {
-      id: 'table-j-01',
-      table_number: 'J-01',
-      zone: 'Ethnic Wear & Jewelry Pavilion',
-      size: '2.0m x 1.2m Fashion Booth',
-      price_sek: 2200,
-      power_included: false,
-      status: 'AVAILABLE',
-      location_description: 'Designer Showcase Row A',
-      map_coordinates: { x: 80, y: 35 }
-    },
-    {
-      id: 'table-j-02',
-      table_number: 'J-02',
-      zone: 'Ethnic Wear & Jewelry Pavilion',
-      size: '2.0m x 1.2m Fashion Booth',
-      price_sek: 2200,
-      power_included: false,
-      status: 'AVAILABLE',
-      location_description: 'Designer Showcase Row B',
-      map_coordinates: { x: 20, y: 65 }
-    },
-    {
-      id: 'table-c-01',
-      table_number: 'C-01',
-      zone: 'Henna, Crafts & Decor',
-      size: '2.0m x 1.0m Artisan Table',
-      price_sek: 1500,
-      power_included: false,
-      status: 'AVAILABLE',
-      location_description: 'Artisan Arcade Stall 1',
-      map_coordinates: { x: 38, y: 65 }
-    },
-    {
-      id: 'table-c-02',
-      table_number: 'C-02',
-      zone: 'Henna, Crafts & Decor',
-      size: '2.0m x 1.0m Artisan Table',
-      price_sek: 1500,
-      power_included: false,
-      status: 'AVAILABLE',
-      location_description: 'Artisan Arcade Stall 2',
-      map_coordinates: { x: 54, y: 65 }
-    },
-    {
-      id: 'table-c-03',
-      table_number: 'C-03',
-      zone: 'Henna, Crafts & Decor',
-      size: '2.0m x 1.0m Artisan Table',
-      price_sek: 1500,
-      power_included: false,
-      status: 'AVAILABLE',
-      location_description: 'Artisan Arcade Stall 3',
-      map_coordinates: { x: 70, y: 65 }
-    },
-    {
-      id: 'table-t-01',
-      table_number: 'T-01',
-      zone: 'General Vendor Stall',
-      size: '2.0m x 1.2m Standard Table',
-      price_sek: 1800,
-      power_included: false,
-      status: 'AVAILABLE',
-      location_description: 'Exhibition Hall General Row',
-      map_coordinates: { x: 85, y: 65 }
-    }
-  ];
+  return [];
 }
 
-export const DEFAULT_ORGANIZED_EVENTS: OrganizedEvent[] = [
-  {
-    id: 'ce-event-1',
-    title: 'Nordic Grand Wedding & Bridal Showcase 2026',
-    tagline: "Sweden's premier gathering of luxury bridal designers, florist masters, caterers, and photographers.",
-    description: "Join us for the pinnacle wedding planning event of the season curated exclusively by Creative Events Nordic. Explore breathtaking tablescape displays, meet verified photographers, sample bespoke wedding cakes, and experience our 14:00 bridal runway show with Scandinavia's most acclaimed wedding houses.",
-    category: 'Bridal & Wedding Fair',
-    start_date: '2026-11-14',
-    end_date: '2026-11-14',
-    time: '11:00 - 18:00',
-    location_name: 'Münchenbryggeriet Event Hall',
-    city: 'Stockholm',
-    address: 'Torkel Knutssonsgatan 2, 118 25 Stockholm',
-    image_url: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80',
-    floor_plan_image_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1400&q=80',
-    vendor_tables: generateDefaultVendorTables('ce-event-1'),
-    gallery_urls: [
-      'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
-    ],
-    price: 'Free Registration',
-    capacity: '600 Attendees',
-    ticket_url: '',
-    registration_email: 'sandy@creativeventsnordic.com',
-    registration_phone: '+46 70 123 45 67',
-    highlights: [
-      'Over 50 curated Nordic wedding specialists',
-      'Runway Fashion Showcase at 14:00',
-      'Complimentary sparkling wine tasting',
-      'Exclusive booking discounts and prize giveaways'
-    ],
-    organizer: 'Creative Events Nordic',
-    is_featured: true,
-    status: 'UPCOMING',
-    created_at: '2026-03-01T10:00:00Z'
-  },
-  {
-    id: 'ce-event-2',
-    title: 'Stockholm Waterfront Food & Culture Festival',
-    tagline: 'A celebration of Nordic gastronomy, artisanal street food, craft mixology, and acoustic live stages.',
-    description: "Creative Events brings together Stockholm's finest caterers, food trucks, craft microbrewers, and artisan dessert creators for an unforgettable weekend by the water. Featuring interactive culinary masterclasses, acoustic sunset sessions, and activities for families.",
-    category: 'Festival & Culinary',
-    start_date: '2026-12-05',
-    end_date: '2026-12-06',
-    time: '12:00 - 22:00',
-    location_name: 'Skeppsholmen Waterfront Grounds',
-    city: 'Stockholm',
-    address: 'Slupskjulsvägen 26, 111 49 Stockholm',
-    image_url: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=80',
-    price: '150 SEK (Kids under 12 Free)',
-    capacity: '1200 Attendees',
-    ticket_url: '',
-    registration_email: 'sandy@creativeventsnordic.com',
-    highlights: [
-      '25+ Award-winning culinary stations',
-      'Live DJ sets & sunset waterfront lounge',
-      'Interactive cocktail & barista masterclasses',
-      'Family entertainment & games zone'
-    ],
-    organizer: 'Creative Events Nordic',
-    is_featured: true,
-    status: 'UPCOMING',
-    created_at: '2026-03-02T10:00:00Z'
-  },
-  {
-    id: 'ce-event-3',
-    title: 'Nordic Event Industry Leadership & Vendor Gala',
-    tagline: 'Annual gala and networking summit honoring vendor excellence, sustainability, and collaborative growth.',
-    description: 'An exclusive black-tie gala hosted by Creative Events Nordic, celebrating the vendors, planners, and creatives who transform events across Sweden. The evening includes a seated 3-course dinner, vendor awards, panel discussions on event trends, and high-energy networking.',
-    category: 'Networking & Gala',
-    start_date: '2027-01-22',
-    end_date: '2027-01-22',
-    time: '18:30 - 23:30',
-    location_name: 'Clarion Hotel Post Grand Ballroom',
-    city: 'Gothenburg',
-    address: 'Drottningtorget 10, 411 03 Göteborg',
-    image_url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-    price: '350 SEK',
-    capacity: '350 Attendees',
-    ticket_url: '',
-    registration_email: 'sandy@creativeventsnordic.com',
-    highlights: [
-      'Keynotes on 2027 Event Design & Green Staging',
-      'Nordic Vendor of the Year Awards',
-      'Three-course Nordic banquet with wine pairing',
-      'Live swing & soul band afterparty'
-    ],
-    organizer: 'Creative Events Nordic',
-    is_featured: true,
-    status: 'UPCOMING',
-    created_at: '2026-03-03T10:00:00Z'
-  },
-  {
-    id: 'ce-event-4',
-    title: 'Malmö Creative Pop-Up Market & Design Fair',
-    tagline: 'A vibrant indoor market showcasing indie florists, rental stylists, bakers, and sound engineers.',
-    description: 'Discover fresh event concepts and hire local indie talent directly. Creative Events transforms Lokstallarna into an immersive bazaar of creative table settings, photo installations, bespoke invitations, and live lighting demonstrations.',
-    category: 'Market & Fair',
-    start_date: '2027-02-14',
-    end_date: '2027-02-14',
-    time: '10:00 - 17:00',
-    location_name: 'Lokstallarna i Kirseberg',
-    city: 'Malmö',
-    address: 'Södra Bulltoftavägen 51, 212 22 Malmö',
-    image_url: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80',
-    price: 'Free Entry',
-    capacity: '800 Attendees',
-    ticket_url: '',
-    registration_email: 'sandy@creativeventsnordic.com',
-    highlights: [
-      '40+ Boutique creators & rental specialists',
-      'Live floral arrangement and balloon styling workshops',
-      'Valentine photo installation stations',
-      'Local bakery & specialty coffee bar'
-    ],
-    organizer: 'Creative Events Nordic',
-    is_featured: false,
-    status: 'UPCOMING',
-    created_at: '2026-03-04T10:00:00Z'
-  }
-];
+export const DEFAULT_ORGANIZED_EVENTS: OrganizedEvent[] = [];
 
 class ApiService {
   
@@ -1227,7 +996,7 @@ class ApiService {
         .select('*')
         .order('start_date', { ascending: true });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         await safeStorage.setItem('creative_organized_events', JSON.stringify(data));
         return data as OrganizedEvent[];
       }
@@ -1235,12 +1004,12 @@ class ApiService {
       console.warn('Supabase organized_events query skipped or failed, using local store:', err);
     }
 
-    // Fallback to local storage or defaults
+    // Fallback to local storage if offline/failed
     const cached = await safeStorage.getItem('creative_organized_events');
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed as OrganizedEvent[];
         }
       } catch (e) {
@@ -1248,8 +1017,7 @@ class ApiService {
       }
     }
 
-    await safeStorage.setItem('creative_organized_events', JSON.stringify(DEFAULT_ORGANIZED_EVENTS));
-    return DEFAULT_ORGANIZED_EVENTS;
+    return [];
   }
 
   async getOrganizedEvent(id: string): Promise<OrganizedEvent | null> {
@@ -1518,16 +1286,14 @@ class ApiService {
   // ── Market Layout & Table Slots ──
 
   generateDefaultEventLayout(eventId: string): EventMarketLayout {
-    const event = DEFAULT_ORGANIZED_EVENTS.find(e => e.id === eventId);
-    const mapUrl = event?.floor_plan_image_url || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1400&q=80';
     return {
       id: `layout-${eventId}`,
       event_id: eventId,
-      name: 'Standard Arena Market Floorplan',
-      description: 'Main exhibition arena with premium island booths, central boulevard, culinary hub, and artisan row.',
-      map_image_url: mapUrl,
-      floor_plan_image_url: mapUrl,
-      slots: DEFAULT_EVENT_SLOTS.map(slot => ({ ...slot })),
+      name: 'Event Arena Market Floorplan',
+      description: 'Main exhibition arena layout.',
+      map_image_url: '',
+      floor_plan_image_url: '',
+      slots: [],
       updated_at: new Date().toISOString()
     };
   }
@@ -1663,7 +1429,7 @@ class ApiService {
       }
 
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         await safeStorage.setItem('creative_vendor_event_bookings', JSON.stringify(data));
         return data as VendorEventBooking[];
       }
@@ -1676,7 +1442,7 @@ class ApiService {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           if (eventId) {
             return parsed.filter((b: VendorEventBooking) => b.event_id === eventId);
           }
@@ -1687,12 +1453,7 @@ class ApiService {
       }
     }
 
-    // Seed defaults
-    await safeStorage.setItem('creative_vendor_event_bookings', JSON.stringify(DEFAULT_VENDOR_EVENT_BOOKINGS));
-    if (eventId) {
-      return DEFAULT_VENDOR_EVENT_BOOKINGS.filter(b => b.event_id === eventId);
-    }
-    return DEFAULT_VENDOR_EVENT_BOOKINGS;
+    return [];
   }
 
   async getVendorEventBooking(id: string): Promise<VendorEventBooking | null> {
@@ -1906,197 +1667,9 @@ export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
   }
 ];
 
-export const DEFAULT_EVENT_SLOTS: EventTableSlot[] = [
-  // Zone A: Main Stage & Entrance (VIP & Premium Corner)
-  { id: 'A-01', table_number: 'Table A-01', zone: 'Zone A - Premium Island', tier: 'premium', description: 'Corner facing main entrance, 4x3m showcase with spotlight fixture', status: 'available', row: 1, col: 1, x: 18, y: 28, map_coordinates: { x: 18, y: 28 }, size: '4m x 3m (12m²)', price_sek: 7800, power_included: true },
-  { id: 'A-02', table_number: 'Table A-02', zone: 'Zone A - Premium Island', tier: 'premium', description: 'Adjacent to bridal runway stage, highest visitor footfall', status: 'available', row: 1, col: 2, x: 34, y: 28, map_coordinates: { x: 34, y: 28 }, size: '4m x 3m (12m²)', price_sek: 7800, power_included: true },
-  { id: 'A-03', table_number: 'Table A-03', zone: 'Zone A - Premium Island', tier: 'sponsor', description: 'VIP Main Stage sponsor pavilion, 6x4m prime placement', status: 'available', row: 1, col: 3, x: 50, y: 28, map_coordinates: { x: 50, y: 28 }, size: '6m x 4m (24m²)', price_sek: 13500, power_included: true },
-  { id: 'A-04', table_number: 'Table A-04', zone: 'Zone A - Premium Island', tier: 'premium', description: 'Corner showcase on central boulevard with 2 open sides', status: 'available', row: 2, col: 1, x: 66, y: 28, map_coordinates: { x: 66, y: 28 }, size: '4m x 3m (12m²)', price_sek: 7800, power_included: true },
-  { id: 'A-05', table_number: 'Table A-05', zone: 'Zone A - Premium Island', tier: 'premium', description: 'East walkway corner booth with power feed', status: 'available', row: 2, col: 2, x: 82, y: 28, map_coordinates: { x: 82, y: 28 }, size: '4m x 3m (12m²)', price_sek: 7800, power_included: true },
-  { id: 'A-06', table_number: 'Table A-06', zone: 'Zone A - Premium Island', tier: 'premium', description: 'Facing VIP lounge reception and press backdrop', status: 'available', row: 2, col: 3, x: 88, y: 44, map_coordinates: { x: 88, y: 44 }, size: '4m x 3m (12m²)', price_sek: 7800, power_included: true },
+export const DEFAULT_EVENT_SLOTS: EventTableSlot[] = [];
 
-  // Zone B: Central Exhibition Hall (Standard Shell Scheme)
-  { id: 'B-01', table_number: 'Table B-01', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme with partitions & table', status: 'available', row: 3, col: 1, x: 18, y: 48, map_coordinates: { x: 18, y: 48 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-02', table_number: 'Table B-02', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme, central aisle', status: 'available', row: 3, col: 2, x: 32, y: 48, map_coordinates: { x: 32, y: 48 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-03', table_number: 'Table B-03', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme, near seminar room', status: 'available', row: 3, col: 3, x: 46, y: 48, map_coordinates: { x: 46, y: 48 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-04', table_number: 'Table B-04', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme with socket', status: 'available', row: 3, col: 4, x: 60, y: 48, map_coordinates: { x: 60, y: 48 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-05', table_number: 'Table B-05', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme, west wing', status: 'available', row: 4, col: 1, x: 18, y: 64, map_coordinates: { x: 18, y: 64 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-06', table_number: 'Table B-06', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme', status: 'available', row: 4, col: 2, x: 32, y: 64, map_coordinates: { x: 32, y: 64 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-07', table_number: 'Table B-07', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme', status: 'available', row: 4, col: 3, x: 46, y: 64, map_coordinates: { x: 46, y: 64 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-  { id: 'B-08', table_number: 'Table B-08', zone: 'Zone B - Standard Hall', tier: 'standard', description: 'Standard 3x3m shell scheme with display wall', status: 'available', row: 4, col: 4, x: 60, y: 64, map_coordinates: { x: 60, y: 64 }, size: '3m x 3m (9m²)', price_sek: 4500, power_included: true },
-
-  // Zone C: Culinary & Food Tasting Arcade
-  { id: 'C-01', table_number: 'Stall C-01', zone: 'Zone C - Culinary Alley', tier: 'culinary', description: 'Food preparation station with potable water & 400V feed', status: 'available', row: 5, col: 1, x: 74, y: 48, map_coordinates: { x: 74, y: 48 }, size: '3.5m x 3.5m (12m²)', price_sek: 6200, power_included: true },
-  { id: 'C-02', table_number: 'Stall C-02', zone: 'Zone C - Culinary Alley', tier: 'culinary', description: 'Tasting counter with sneeze guard & greywater access', status: 'available', row: 5, col: 2, x: 86, y: 48, map_coordinates: { x: 86, y: 48 }, size: '3.5m x 3.5m (12m²)', price_sek: 6200, power_included: true },
-  { id: 'C-03', table_number: 'Stall C-03', zone: 'Zone C - Culinary Alley', tier: 'culinary', description: 'High-power mixology & craft beverage station', status: 'available', row: 5, col: 3, x: 74, y: 64, map_coordinates: { x: 74, y: 64 }, size: '3.5m x 3.5m (12m²)', price_sek: 6200, power_included: true },
-  { id: 'C-04', table_number: 'Stall C-04', zone: 'Zone C - Culinary Alley', tier: 'culinary', description: 'Artisan bakery & confectionery display booth', status: 'available', row: 5, col: 4, x: 86, y: 64, map_coordinates: { x: 86, y: 64 }, size: '3.5m x 3.5m (12m²)', price_sek: 6200, power_included: true },
-
-  // Zone D: Artisan & Creator Pop-Up Row
-  { id: 'D-01', table_number: 'Table D-01', zone: 'Zone D - Artisan Row', tier: 'artisan', description: 'Trestle table 180cm for independent craft & stationery', status: 'available', row: 6, col: 1, x: 16, y: 82, map_coordinates: { x: 16, y: 82 }, size: '2m x 1.5m (3m²)', price_sek: 2500, power_included: false },
-  { id: 'D-02', table_number: 'Table D-02', zone: 'Zone D - Artisan Row', tier: 'artisan', description: 'Indie florist & botanical display tabletop', status: 'available', row: 6, col: 2, x: 28, y: 82, map_coordinates: { x: 28, y: 82 }, size: '2m x 1.5m (3m²)', price_sek: 2500, power_included: false },
-  { id: 'D-03', table_number: 'Table D-03', zone: 'Zone D - Artisan Row', tier: 'artisan', description: 'Bespoke stationery & accessories display', status: 'available', row: 6, col: 3, x: 40, y: 82, map_coordinates: { x: 40, y: 82 }, size: '2m x 1.5m (3m²)', price_sek: 2500, power_included: false },
-  { id: 'D-04', table_number: 'Table D-04', zone: 'Zone D - Artisan Row', tier: 'artisan', description: 'Artisan craft table with skylight natural lighting', status: 'available', row: 6, col: 4, x: 54, y: 82, map_coordinates: { x: 54, y: 82 }, size: '2m x 1.5m (3m²)', price_sek: 2500, power_included: false },
-  { id: 'D-05', table_number: 'Table D-05', zone: 'Zone D - Artisan Row', tier: 'artisan', description: 'Jewelry & hair accessory presentation', status: 'available', row: 6, col: 5, x: 68, y: 82, map_coordinates: { x: 68, y: 82 }, size: '2m x 1.5m (3m²)', price_sek: 2500, power_included: false },
-  { id: 'D-06', table_number: 'Table D-06', zone: 'Zone D - Artisan Row', tier: 'artisan', description: 'Eco-conscious design & handmade props table', status: 'available', row: 6, col: 6, x: 82, y: 82, map_coordinates: { x: 82, y: 82 }, size: '2m x 1.5m (3m²)', price_sek: 2500, power_included: false },
-];
-
-export const DEFAULT_VENDOR_EVENT_BOOKINGS: VendorEventBooking[] = [
-  {
-    id: 'booking-seed-1',
-    booking_ref: 'CEB-2026-1042',
-    event_id: 'ce-event-1',
-    event_title: 'Nordic Grand Wedding & Bridal Showcase 2026',
-    event_date: '2026-11-14',
-    event_city: 'Stockholm',
-    event_location: 'Münchenbryggeriet Event Hall',
-    business_name: 'Nordic Bloom Florals & Botanical Styling',
-    contact_name: 'Astrid Lindqvist',
-    email: 'astrid@nordicbloom.se',
-    phone: '+46 70 812 34 56',
-    category: 'Florals',
-    website: 'https://nordicbloom.se',
-    socials: '@nordicbloomflorals',
-    booth_package_id: 'booth-premium-corner',
-    booth_package_name: 'Premium Corner & Island Showcase',
-    price: 7800,
-    currency: 'SEK',
-    selected_table_id: 'A-02',
-    selected_table_number: 'Table A-02',
-    power_needed: true,
-    power_type: 'standard_230v',
-    tables_count: 2,
-    chairs_count: 4,
-    staff_count: 3,
-    special_requests: 'Requires proximity to water point for fresh floral arrangements and flower preservation buckets.',
-    showcase_pitch: 'Showcasing sustainable Swedish autumn wedding bouquets, wild archways, and tabletop floral installations.',
-    payment_method: 'card',
-    payment_transaction_id: 'TXN-SWED-98421',
-    payment_date: '2026-03-05T09:35:00Z',
-    subtotal: 6240,
-    vat_amount: 1560,
-    status: 'CONFIRMED',
-    payment_status: 'PAID_IN_FULL',
-    assigned_booth: 'Table A-02',
-    admin_notes: 'Approved and confirmed. Direct payment settled via Visa. Table A-02 reserved on floorplan.',
-    created_at: '2026-03-05T09:30:00Z',
-    updated_at: '2026-03-05T14:15:00Z'
-  },
-  {
-    id: 'booking-seed-2',
-    booking_ref: 'CEB-2026-1088',
-    event_id: 'ce-event-1',
-    event_title: 'Nordic Grand Wedding & Bridal Showcase 2026',
-    event_date: '2026-11-14',
-    event_city: 'Stockholm',
-    event_location: 'Münchenbryggeriet Event Hall',
-    business_name: 'Stockholm Lumière Photography & Cinema',
-    contact_name: 'Elias Bergström',
-    email: 'contact@lumierephotos.se',
-    phone: '+46 73 998 12 34',
-    category: 'Photography',
-    website: 'https://lumierephotos.se',
-    socials: '@lumiere_stockholm',
-    booth_package_id: 'booth-standard',
-    booth_package_name: 'Standard Shell Scheme',
-    price: 4500,
-    currency: 'SEK',
-    selected_table_id: 'B-08',
-    selected_table_number: 'Table B-08',
-    power_needed: true,
-    power_type: 'standard_230v',
-    tables_count: 1,
-    chairs_count: 2,
-    staff_count: 2,
-    special_requests: 'Will have 1x 55-inch display screen playing sample 4K wedding films. Needs steady power.',
-    showcase_pitch: 'Cinematic candid wedding photography portfolios, sample bespoke leather albums, and live portrait session signups.',
-    payment_method: 'swish',
-    payment_transaction_id: 'SWISH-88319',
-    payment_date: '2026-03-06T11:22:00Z',
-    subtotal: 3600,
-    vat_amount: 900,
-    status: 'CONFIRMED',
-    payment_status: 'PAID_IN_FULL',
-    assigned_booth: 'Table B-08',
-    admin_notes: 'Paid in full via Swish. Screen display approved. Exhibitor badges will be ready at registration.',
-    created_at: '2026-03-06T11:20:00Z',
-    updated_at: '2026-03-06T16:00:00Z'
-  },
-  {
-    id: 'booking-seed-3',
-    booking_ref: 'CEB-2026-1145',
-    event_id: 'ce-event-2',
-    event_title: 'Stockholm Waterfront Food & Culture Festival',
-    event_date: '2026-12-05',
-    event_city: 'Stockholm',
-    event_location: 'Skeppsholmen Waterfront Grounds',
-    business_name: 'Skärgården Artisan Bakery & Canapés',
-    contact_name: 'Maja Holmberg',
-    email: 'maja@skargardenbakery.se',
-    phone: '+46 72 456 78 90',
-    category: 'Catering',
-    website: 'https://skargardenbakery.se',
-    socials: '@skargardenbakery',
-    booth_package_id: 'booth-culinary',
-    booth_package_name: 'Culinary & Beverage Station',
-    price: 6200,
-    currency: 'SEK',
-    selected_table_id: 'C-01',
-    selected_table_number: 'Stall C-01',
-    power_needed: true,
-    power_type: 'high_load_400v',
-    tables_count: 2,
-    chairs_count: 2,
-    staff_count: 4,
-    special_requests: 'Requires 400V 16A connection for portable pastry warmer and mini convection oven.',
-    showcase_pitch: 'Tasting samples of Nordic sourdough canapés, cloudberry tartlets, and festive wedding dessert tables.',
-    status: 'PENDING',
-    payment_status: 'UNPAID',
-    assigned_booth: '',
-    admin_notes: 'Needs technical review by electrical coordinator for 400V socket at Skeppsholmen zone C.',
-    created_at: '2026-03-07T14:45:00Z',
-    updated_at: '2026-03-07T14:45:00Z'
-  },
-  {
-    id: 'booking-seed-4',
-    booking_ref: 'CEB-2026-1219',
-    event_id: 'ce-event-4',
-    event_title: 'Malmö Creative Pop-Up Market & Design Fair',
-    event_date: '2027-02-14',
-    event_city: 'Malmö',
-    event_location: 'Lokstallarna i Kirseberg',
-    business_name: 'Ateljé Linnea Bespoke Calligraphy & Stationery',
-    contact_name: 'Linnea Ek',
-    email: 'linnea@ateljelinnea.com',
-    phone: '+46 76 333 44 55',
-    category: 'Decor',
-    website: 'https://ateljelinnea.com',
-    socials: '@ateljelinnea',
-    booth_package_id: 'booth-artisan',
-    booth_package_name: 'Artisan & Indie Creator Tabletop',
-    price: 2500,
-    currency: 'SEK',
-    selected_table_id: 'D-04',
-    selected_table_number: 'Table D-04',
-    power_needed: false,
-    power_type: 'none',
-    tables_count: 1,
-    chairs_count: 2,
-    staff_count: 1,
-    special_requests: 'Would love tabletop lighting clip or position under good venue skylight for paper calligraphy demonstration.',
-    showcase_pitch: 'Handmade cotton rag paper wedding suites, wax seal stamping bar, and live custom envelope calligraphy for visitors.',
-    payment_method: 'swish',
-    payment_transaction_id: 'SWISH-44021',
-    payment_date: '2026-03-08T08:18:00Z',
-    subtotal: 2000,
-    vat_amount: 500,
-    status: 'CONFIRMED',
-    payment_status: 'PAID_IN_FULL',
-    assigned_booth: 'Table D-04',
-    admin_notes: 'Paid in full via Swish. Great artisan fit for Malmö fair. Assigned under natural light in Section B.',
-    created_at: '2026-03-08T08:15:00Z',
-    updated_at: '2026-03-08T10:00:00Z'
-  }
-];
+export const DEFAULT_VENDOR_EVENT_BOOKINGS: VendorEventBooking[] = [];
 
 export const api = new ApiService();
 
