@@ -255,6 +255,7 @@ export type BookingPaymentStatus = 'UNPAID' | 'DEPOSIT_PAID' | 'PAID_IN_FULL' | 
 
 export interface BoothPackage {
   id: string;
+  event_id?: string;
   name: string;
   tier: 'standard' | 'premium' | 'culinary' | 'artisan' | 'sponsor';
   dimensions: string; // e.g. "3x3m (9m²)"
@@ -266,6 +267,8 @@ export interface BoothPackage {
   popular?: boolean;
   allowed_zones?: string[];
   max_spots?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface EventTableSlot {

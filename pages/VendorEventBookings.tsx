@@ -115,30 +115,42 @@ export const VendorEventBookings: React.FC = () => {
     loadInitialData();
   }, []);
 
-  // When selected event changes, load its market layout
+  // When selected event changes, load its market layout and booth packages
   useEffect(() => {
     if (selectedEventId) {
       loadMarketLayout(selectedEventId);
+      api.getBoothPackages(selectedEventId).then(pkgs => {
+        setBoothPackages(pkgs);
+        if (pkgs.length > 0 && !pkgs.some(p => p.id === selectedPackageId)) {
+          setSelectedPackageId(pkgs[0].id);
+        }
+      }).catch(err => {
+        console.warn('Could not load booth packages for event:', err);
+      });
     }
   }, [selectedEventId]);
 
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      const [eventsData, bookingsData, packagesData] = await Promise.all([
+      const [eventsData, bookingsData] = await Promise.all([
         api.getOrganizedEvents(),
-        api.getVendorEventBookings(),
-        api.getBoothPackages()
+        api.getVendorEventBookings()
       ]);
       setEvents(eventsData);
       setAllBookings(bookingsData);
-      setBoothPackages(packagesData);
 
       let targetEventId = initialEventId;
       if (!targetEventId || !eventsData.some(e => e.id === targetEventId)) {
         targetEventId = eventsData.length > 0 ? eventsData[0].id : '';
       }
       setSelectedEventId(targetEventId);
+
+      const packagesData = await api.getBoothPackages(targetEventId || undefined);
+      setBoothPackages(packagesData);
+      if (packagesData.length > 0) {
+        setSelectedPackageId(packagesData[0].id);
+      }
 
       // Pre-fill user/vendor profile if logged in
       if (user) {
@@ -360,10 +372,10 @@ export const VendorEventBookings: React.FC = () => {
         socials: socials.trim(),
         payer_company_vat: companyVat.trim(),
 
-        booth_package_id: selectedPackage.id,
-        booth_package_name: selectedPackage.name,
-        price: selectedPackage.price,
-        currency: selectedPackage.currency,
+        booth_package_id: selectedPackage?.id || (selectedTableSlot ? `table-${selectedTableSlot.id}` : 'custom'),
+        booth_package_name: selectedPackage?.name || (selectedTableSlot ? `Stall ${selectedTableSlot.table_number}` : 'Standard Exhibition Stall'),
+        price: selectedTableSlot.price_sek || selectedPackage?.price || 4500,
+        currency: selectedPackage?.currency || 'SEK',
         selected_table_id: selectedTableSlot.id,
         selected_table_number: selectedTableSlot.table_number,
         assigned_booth: selectedTableSlot.table_number,
@@ -724,6 +736,13 @@ export const VendorEventBookings: React.FC = () => {
                   )}
                 </div>
 
+                {boothPackages.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                    <p className="text-xs font-semibold text-slate-500">
+                      Standard booth packages are currently being configured for this event. You can select your preferred exhibition stall directly from the table directory below.
+                    </p>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   {boothPackages.map(pkg => {
                     const isSelected = selectedPackageId === pkg.id;
@@ -796,6 +815,7 @@ export const VendorEventBookings: React.FC = () => {
                     );
                   })}
                 </div>
+                )}
               </div>
 
               {/* STEP 3: NUMBERED TABLES DIRECTORY & OPTIONAL FLOORPLAN REFERENCE */}

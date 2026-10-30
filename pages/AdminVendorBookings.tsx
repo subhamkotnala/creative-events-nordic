@@ -239,21 +239,25 @@ export const AdminVendorBookings: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [bookingsData, eventsData, packagesData] = await Promise.all([
+      const [bookingsData, eventsData] = await Promise.all([
         api.getVendorEventBookings(),
-        api.getOrganizedEvents(),
-        api.getBoothPackages()
+        api.getOrganizedEvents()
       ]);
       setBookings(bookingsData);
       setEvents(eventsData);
-      setBoothPackages(packagesData);
 
       const targetEvId = initialEventFilter !== 'ALL'
         ? initialEventFilter
         : (eventsData.length > 0 ? eventsData[0].id : '');
       setSelectedLayoutEventId(targetEvId);
-      if (targetEvId) {
-        const layout = await api.getEventMarketLayout(targetEvId);
+
+      const [packagesData, layout] = await Promise.all([
+        api.getBoothPackages(targetEvId || undefined),
+        targetEvId ? api.getEventMarketLayout(targetEvId) : Promise.resolve(null)
+      ]);
+      setBoothPackages(packagesData);
+
+      if (layout) {
         setCurrentLayout(layout);
         setLayoutSettingsForm({
           name: layout.name,
@@ -270,10 +274,14 @@ export const AdminVendorBookings: React.FC = () => {
   const handleLayoutEventChange = async (eventId: string) => {
     setSelectedLayoutEventId(eventId);
     try {
-      const layout = await api.getEventMarketLayout(eventId);
+      const [layout, packagesData] = await Promise.all([
+        api.getEventMarketLayout(eventId),
+        api.getBoothPackages(eventId)
+      ]);
       setCurrentLayout(layout);
+      setBoothPackages(packagesData);
     } catch (err) {
-      console.error('Failed to load layout for event:', err);
+      console.error('Failed to load layout or packages for event:', err);
     }
   };
 
@@ -321,7 +329,11 @@ export const AdminVendorBookings: React.FC = () => {
     if (!editingPackage.name) return;
 
     try {
-      const saved = await api.saveBoothPackage(editingPackage);
+      const pkgToSave: Partial<BoothPackage> = {
+        ...editingPackage,
+        event_id: editingPackage.event_id || selectedLayoutEventId
+      };
+      const saved = await api.saveBoothPackage(pkgToSave);
       setBoothPackages(prev => {
         const idx = prev.findIndex(p => p.id === saved.id);
         if (idx >= 0) {
@@ -342,7 +354,7 @@ export const AdminVendorBookings: React.FC = () => {
   const handleDeletePackage = async (pkgId: string) => {
     if (!confirm('Are you sure you want to delete this booth package tier?')) return;
     try {
-      await api.deleteBoothPackage(pkgId);
+      await api.deleteBoothPackage(pkgId, selectedLayoutEventId);
       setBoothPackages(prev => prev.filter(p => p.id !== pkgId));
       showNotification('success', 'Booth package tier removed.');
     } catch (err: any) {
@@ -640,6 +652,7 @@ export const AdminVendorBookings: React.FC = () => {
     setEditingPackage({
       ...pkg,
       id: undefined,
+      event_id: selectedLayoutEventId,
       name: `${pkg.name} (Custom)`,
       badge: 'Custom'
     });
@@ -1607,35 +1620,82 @@ export const AdminVendorBookings: React.FC = () => {
         ═════════════════════════════════════════════════════════════════════════ */}
         {adminView === 'packages' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 flex items-center justify-between">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold text-slate-900">Custom Booth Package Tiers</h3>
                 <p className="text-xs text-slate-500">
-                  Create and adjust exhibitor booth packages, features, dimensions, and standard pricing in SEK.
+                  Create and adjust exhibitor booth packages, features, dimensions, and standard pricing for each event.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingPackage({
-                    name: '',
-                    tier: 'standard',
-                    dimensions: '3m x 3m (9m²)',
-                    price: 4500,
-                    currency: 'SEK',
-                    description: '',
-                    features: ['1 Table & 2 Chairs', 'Electricity socket 230V', 'Exhibitor badges'],
-                    badge: ''
-                  });
-                  setIsPackageModalOpen(true);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md"
-              >
-                <Plus className="w-4 h-4" /> Create Package Tier
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Event:</span>
+                  <select
+                    value={selectedLayoutEventId}
+                    onChange={e => handleLayoutEventChange(e.target.value)}
+                    className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-bold max-w-[240px]"
+                  >
+                    {events.map(ev => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title} ({ev.city})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPackage({
+                      event_id: selectedLayoutEventId,
+                      name: '',
+                      tier: 'standard',
+                      dimensions: '3m x 3m (9m²)',
+                      price: 4500,
+                      currency: 'SEK',
+                      description: '',
+                      features: ['1 Table & 2 Chairs', 'Electricity socket 230V', 'Exhibitor badges'],
+                      badge: ''
+                    });
+                    setIsPackageModalOpen(true);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md"
+                >
+                  <Plus className="w-4 h-4" /> Create Package Tier
+                </button>
+              </div>
             </div>
 
+            {boothPackages.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center">
+                <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <h4 className="text-base font-bold text-slate-700">No Booth Packages for this Event</h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-6">
+                  {selectedLayoutEvent ? `"${selectedLayoutEvent.title}" does not have any custom packages configured yet.` : 'Select an event to configure packages.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPackage({
+                      event_id: selectedLayoutEventId,
+                      name: '',
+                      tier: 'standard',
+                      dimensions: '3m x 3m (9m²)',
+                      price: 4500,
+                      currency: 'SEK',
+                      description: '',
+                      features: ['1 Table & 2 Chairs', 'Electricity socket 230V', 'Exhibitor badges'],
+                      badge: ''
+                    });
+                    setIsPackageModalOpen(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-sky-500 shadow-sm inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Create First Package
+                </button>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {boothPackages.map(pkg => (
                 <div
@@ -1704,6 +1764,7 @@ export const AdminVendorBookings: React.FC = () => {
                 </div>
               ))}
             </div>
+            )}
           </div>
         )}
       </div>
@@ -1723,7 +1784,9 @@ export const AdminVendorBookings: React.FC = () => {
                   <h3 className="text-xl font-bold text-slate-900">
                     {editingPackage.id ? 'Edit Booth Package Tier' : 'Add New Booth Package'}
                   </h3>
-                  <p className="text-xs text-slate-400">Configure dimensions, pricing, and features for vendors.</p>
+                  <p className="text-xs text-slate-400">
+                    {selectedLayoutEvent ? `Event: ${selectedLayoutEvent.title} • ` : ''}Configure dimensions, pricing, and features for vendors.
+                  </p>
                 </div>
                 <button
                   type="button"
