@@ -1233,29 +1233,62 @@ class ApiService {
 
   // ─── Vendor Event Bookings, Booth Packages & Market Layouts ──────────────
 
-  async getBoothPackages(): Promise<BoothPackage[]> {
-    const cached = await safeStorage.getItem('creative_booth_packages');
+  async getBoothPackages(eventId?: string): Promise<BoothPackage[]> {
+    try {
+      let query = supabase.from('booth_packages').select('*');
+      if (eventId) {
+        query = query.eq('event_id', eventId);
+      }
+      const { data, error } = await query.order('price', { ascending: true });
+      if (!error && data) {
+        const cacheKey = eventId ? `creative_booth_packages_${eventId}` : 'creative_booth_packages';
+        await safeStorage.setItem(cacheKey, JSON.stringify(data));
+        return data as BoothPackage[];
+      }
+    } catch (err) {
+      console.warn('Supabase booth_packages query skipped or failed, using local store:', err);
+    }
+
+    const cacheKey = eventId ? `creative_booth_packages_${eventId}` : 'creative_booth_packages';
+    const cached = await safeStorage.getItem(cacheKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed as BoothPackage[];
         }
       } catch (e) {
         console.warn('Failed to parse cached booth packages:', e);
       }
     }
-    await safeStorage.setItem('creative_booth_packages', JSON.stringify(DEFAULT_BOOTH_PACKAGES));
+
+    if (eventId) {
+      // Check if general cache has packages for this event
+      const globalCached = await safeStorage.getItem('creative_booth_packages');
+      if (globalCached) {
+        try {
+          const parsed = JSON.parse(globalCached);
+          if (Array.isArray(parsed)) {
+            const filtered = parsed.filter((p: BoothPackage) => p.event_id === eventId);
+            if (filtered.length > 0) return filtered;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
     return DEFAULT_BOOTH_PACKAGES;
   }
 
   async saveBoothPackage(pkgData: Partial<BoothPackage>): Promise<BoothPackage> {
-    const existing = await this.getBoothPackages();
     const isNew = !pkgData.id;
     const id = pkgData.id || `booth-pkg-${Date.now()}`;
+    const now = new Date().toISOString();
 
     const fullPackage: BoothPackage = {
       id,
+      event_id: pkgData.event_id || '',
       name: pkgData.name || 'Exhibitor Booth Package',
       tier: pkgData.tier || 'standard',
       dimensions: pkgData.dimensions || '3m x 3m (9m²)',
@@ -1266,18 +1299,69 @@ class ApiService {
       badge: pkgData.badge || '',
       popular: pkgData.popular ?? false,
       allowed_zones: pkgData.allowed_zones || [],
-      max_spots: pkgData.max_spots
+      max_spots: pkgData.max_spots,
+      created_at: pkgData.created_at || now,
+      updated_at: now
     };
 
-    const updated = isNew 
-      ? [...existing, fullPackage]
-      : existing.map(p => (p.id === id ? fullPackage : p));
+    try {
+      const { error } = await supabase
+        .from('booth_packages')
+        .upsert({
+          id: fullPackage.id,
+          event_id: fullPackage.event_id,
+          name: fullPackage.name,
+          tier: fullPackage.tier,
+          dimensions: fullPackage.dimensions,
+          price: fullPackage.price,
+          currency: fullPackage.currency,
+          description: fullPackage.description,
+          features: fullPackage.features,
+          badge: fullPackage.badge,
+          popular: fullPackage.popular,
+          allowed_zones: fullPackage.allowed_zones,
+          max_spots: fullPackage.max_spots,
+          updated_at: now
+        });
+      if (error) {
+        console.error('Supabase saveBoothPackage error:', error);
+      }
+    } catch (err) {
+      console.warn('Supabase saveBoothPackage failed, saving to local store:', err);
+    }
 
-    await safeStorage.setItem('creative_booth_packages', JSON.stringify(updated));
+    if (fullPackage.event_id) {
+      const existingEvent = await this.getBoothPackages(fullPackage.event_id);
+      const updatedEvent = isNew
+        ? [...existingEvent.filter(p => p.id !== id), fullPackage]
+        : existingEvent.map(p => (p.id === id ? fullPackage : p));
+      await safeStorage.setItem(`creative_booth_packages_${fullPackage.event_id}`, JSON.stringify(updatedEvent));
+    }
+
+    const existingGlobal = await this.getBoothPackages();
+    const updatedGlobal = isNew
+      ? [...existingGlobal.filter(p => p.id !== id), fullPackage]
+      : existingGlobal.map(p => (p.id === id ? fullPackage : p));
+    await safeStorage.setItem('creative_booth_packages', JSON.stringify(updatedGlobal));
+
     return fullPackage;
   }
 
-  async deleteBoothPackage(id: string): Promise<void> {
+  async deleteBoothPackage(id: string, eventId?: string): Promise<void> {
+    try {
+      const { error } = await supabase.from('booth_packages').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase deleteBoothPackage error:', error);
+      }
+    } catch (err) {
+      console.warn('Supabase deleteBoothPackage failed:', err);
+    }
+
+    if (eventId) {
+      const existingEvent = await this.getBoothPackages(eventId);
+      const updatedEvent = existingEvent.filter(p => p.id !== id);
+      await safeStorage.setItem(`creative_booth_packages_${eventId}`, JSON.stringify(updatedEvent));
+    }
     const existing = await this.getBoothPackages();
     const updated = existing.filter(p => p.id !== id);
     await safeStorage.setItem('creative_booth_packages', JSON.stringify(updated));
@@ -1386,7 +1470,48 @@ class ApiService {
       }
     }
 
+    // Persist to local cache immediately
     await safeStorage.setItem(`creative_layout_${layout.event_id}`, JSON.stringify(layout));
+
+    // Persist table slots and floor plan directly to Supabase organized_events
+    if (layout.event_id) {
+      const vendorTables: VendorTable[] = (layout.slots || []).map(s => ({
+        id: s.id,
+        table_number: s.table_number,
+        zone: s.zone,
+        size: s.size || (s.tier === 'premium' ? '3x3m' : '2x1.5m'),
+        price_sek: s.price_sek ?? (s.price_override ?? (s.tier === 'premium' ? 7500 : s.tier === 'culinary' ? 5500 : 4000)),
+        power_included: s.power_included ?? (s.tier === 'premium' || s.tier === 'culinary'),
+        status: s.status === 'booked' ? 'BOOKED' : s.status === 'reserved' ? 'RESERVED' : 'AVAILABLE',
+        location_description: s.description || `${s.zone} - ${s.table_number}`,
+        map_coordinates: s.map_coordinates || (s.x !== undefined && s.y !== undefined ? { x: s.x, y: s.y } : undefined),
+        booked_by_name: s.booked_by_name,
+        booking_ref: s.booked_booking_ref
+      }));
+
+      try {
+        const updatePayload: Record<string, any> = {
+          vendor_tables: vendorTables,
+          updated_at: new Date().toISOString()
+        };
+        const floorPlanUrl = layout.floor_plan_image_url || layout.map_image_url;
+        if (floorPlanUrl) {
+          updatePayload.floor_plan_image_url = floorPlanUrl;
+        }
+
+        const { error } = await supabase
+          .from('organized_events')
+          .update(updatePayload)
+          .eq('id', layout.event_id);
+
+        if (error) {
+          console.error('Supabase error saving vendor_tables to organized_events:', error);
+        }
+      } catch (err) {
+        console.warn('Supabase organized_events table layout sync failed:', err);
+      }
+    }
+
     return layout;
   }
 
@@ -1572,9 +1697,8 @@ class ApiService {
   }
 }
 
-export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
+export const BOOTH_PACKAGE_TEMPLATES: Partial<BoothPackage>[] = [
   {
-    id: 'booth-standard',
     name: 'Standard Shell Scheme',
     tier: 'standard',
     dimensions: '3m x 3m (9m²)',
@@ -1593,7 +1717,6 @@ export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
     badge: 'Most Popular'
   },
   {
-    id: 'booth-premium-corner',
     name: 'Premium Corner & Island Showcase',
     tier: 'premium',
     dimensions: '4m x 3m (12m²)',
@@ -1612,7 +1735,6 @@ export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
     badge: 'High Footfall'
   },
   {
-    id: 'booth-culinary',
     name: 'Culinary & Beverage Station',
     tier: 'culinary',
     dimensions: '3.5m x 3.5m (12.2m²)',
@@ -1630,7 +1752,6 @@ export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
     badge: 'Food & Drinks'
   },
   {
-    id: 'booth-artisan',
     name: 'Artisan & Indie Creator Tabletop',
     tier: 'artisan',
     dimensions: '2m x 1.5m (3m²)',
@@ -1648,7 +1769,6 @@ export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
     badge: 'Budget Friendly'
   },
   {
-    id: 'booth-sponsor',
     name: 'Runway & Main Stage VIP Sponsor',
     tier: 'sponsor',
     dimensions: '6m x 4m (24m²)',
@@ -1666,6 +1786,8 @@ export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [
     badge: 'Exclusive VIP'
   }
 ];
+
+export const DEFAULT_BOOTH_PACKAGES: BoothPackage[] = [];
 
 export const DEFAULT_EVENT_SLOTS: EventTableSlot[] = [];
 

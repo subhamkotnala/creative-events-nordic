@@ -595,8 +595,12 @@ const AdminOrganizedEvents: React.FC = () => {
                   key={event.id}
                   className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col group"
                 >
-                  {/* Image banner */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+                  {/* Image banner (clickable to Vendor Booking Portal) */}
+                  <div
+                    onClick={() => navigate(`/event-bookings?eventId=${event.id}`)}
+                    className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 cursor-pointer"
+                    title="Click to open Vendor Booking Portal for this event"
+                  >
                     <img
                       src={event.image_url}
                       alt={event.title}
@@ -604,23 +608,49 @@ const AdminOrganizedEvents: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
+                    {/* Hover indicator for vendor portal */}
+                    <div className="absolute inset-0 bg-sky-950/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <span className="px-3 py-1.5 rounded-xl bg-white/95 text-slate-900 text-xs font-black uppercase tracking-wider shadow-xl flex items-center gap-1.5 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+                        <Store className="w-3.5 h-3.5 text-sky-600" />
+                        <span>Open Vendor Portal ↗</span>
+                      </span>
+                    </div>
+
                     {/* Top badges */}
                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
                       <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-black/60 text-white backdrop-blur-md">
                         {event.category}
                       </span>
-                      <button
-                        onClick={() => handleToggleFeatured(event)}
-                        title={event.is_featured ? 'Remove from Featured on Home' : 'Feature on Home'}
-                        className={`p-1.5 rounded-lg text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1 ${
-                          event.is_featured
-                            ? 'bg-amber-400 text-amber-950 shadow-md'
-                            : 'bg-black/40 text-white hover:bg-black/60'
-                        }`}
-                      >
-                        <Star className={`w-3.5 h-3.5 ${event.is_featured ? 'fill-amber-950' : ''}`} />
-                        <span className="text-[10px] uppercase font-black">{event.is_featured ? 'Featured' : 'Feature'}</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleFeatured(event);
+                          }}
+                          title={event.is_featured ? 'Remove from Featured on Home' : 'Feature on Home'}
+                          className={`p-1.5 rounded-lg text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1 ${
+                            event.is_featured
+                              ? 'bg-amber-400 text-amber-950 shadow-md'
+                              : 'bg-black/40 text-white hover:bg-black/60'
+                          }`}
+                        >
+                          <Star className={`w-3.5 h-3.5 ${event.is_featured ? 'fill-amber-950' : ''}`} />
+                          <span className="text-[10px] uppercase font-black">{event.is_featured ? 'Featured' : 'Feature'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(event);
+                          }}
+                          title="Delete Event"
+                          className="p-1.5 rounded-lg text-xs font-bold backdrop-blur-md bg-black/40 text-rose-300 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Bottom date and status in banner */}
@@ -643,12 +673,17 @@ const AdminOrganizedEvents: React.FC = () => {
 
                   {/* Body info */}
                   <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                    <div className="space-y-2">
+                    {/* Header info (clickable to Vendor Booking Portal) */}
+                    <div
+                      onClick={() => navigate(`/event-bookings?eventId=${event.id}`)}
+                      className="space-y-2 cursor-pointer"
+                      title="Click to open Vendor Booking Portal for this event"
+                    >
                       <div className="flex items-center gap-1.5 text-xs text-sky-600 font-bold">
                         <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="truncate">{event.location_name}, {event.city}</span>
                       </div>
-                      <h3 className="text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
+                      <h3 className="text-base font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-sky-600 transition-colors">
                         {event.title}
                       </h3>
                       {event.tagline && (
@@ -695,7 +730,10 @@ const AdminOrganizedEvents: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setSelectedEventForMapModal(event)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEventForMapModal(event);
+                            }}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold transition-all shadow-sm"
                             title="Click to view or edit floorplan layout map and tables"
                           >
@@ -708,7 +746,10 @@ const AdminOrganizedEvents: React.FC = () => {
 
                           <button
                             type="button"
-                            onClick={() => handleRemoveMapOptionFromEvent(event)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveMapOptionFromEvent(event);
+                            }}
                             className="px-2 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold transition-all text-[10px]"
                             title="Remove map option from this event (use stall directory only)"
                           >
@@ -718,7 +759,10 @@ const AdminOrganizedEvents: React.FC = () => {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setSelectedEventForMapModal(event)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEventForMapModal(event);
+                          }}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold transition-all shadow-sm"
                           title="Manage numbered stall booths and pricing (no map needed)"
                         >
@@ -735,47 +779,73 @@ const AdminOrganizedEvents: React.FC = () => {
                     </div>
 
                     {/* Actions toolbar */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setPreviewEvent(event)}
-                          className="p-2 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors"
-                          title="Quick Preview"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedEventForMapModal(event)}
-                          className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
-                          title="Add / Edit Map Image & Position Tables for Vendors"
-                        >
-                          <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>Map & Stalls</span>
-                        </button>
-                        <Link
-                          to={`/admin/bookings?view=layout&eventId=${event.id}`}
-                          className="px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
-                          title="Configure Market Floorplan & Table Numbers"
-                        >
-                          <Map className="w-3.5 h-3.5 text-sky-600" />
-                          <span>Floorplan</span>
-                        </Link>
-                        <Link
-                          to={`/admin/bookings?eventId=${event.id}`}
-                          className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
-                          title="Manage Vendor Bookings for this Event"
-                        >
-                          <Store className="w-3.5 h-3.5 text-amber-700" />
-                          <span>Bookings</span>
-                        </Link>
+                    <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                      {/* Row 1: Quick Navigation & Portals */}
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Link
+                            to={`/event-bookings?eventId=${event.id}`}
+                            onClick={e => e.stopPropagation()}
+                            className="px-2.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all"
+                            title="Open Vendor Booking Portal for this Event"
+                          >
+                            <Store className="w-3.5 h-3.5" />
+                            <span>Vendor Portal ↗</span>
+                          </Link>
+                          <Link
+                            to={`/admin/bookings?view=layout&eventId=${event.id}`}
+                            onClick={e => e.stopPropagation()}
+                            className="px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
+                            title="Configure Market Floorplan & Table Numbers"
+                          >
+                            <Map className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Floorplan</span>
+                          </Link>
+                          <Link
+                            to={`/admin/bookings?eventId=${event.id}`}
+                            onClick={e => e.stopPropagation()}
+                            className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
+                            title="Manage Vendor Bookings for this Event"
+                          >
+                            <Layers className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Bookings</span>
+                          </Link>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEventForMapModal(event);
+                            }}
+                            className="px-2 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
+                            title="Add / Edit Map Image & Position Tables for Vendors"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Map</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewEvent(event);
+                            }}
+                            className="p-1.5 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                            title="Quick Preview"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      {/* Row 2: Status & Admin Controls (Edit & Delete) */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                         <select
                           value={event.status}
+                          onClick={e => e.stopPropagation()}
                           onChange={e => handleStatusChange(event, e.target.value as OrganizedEvent['status'])}
-                          className="text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 outline-none cursor-pointer"
+                          className="text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 outline-none cursor-pointer"
                         >
                           <option value="UPCOMING">Upcoming</option>
                           <option value="ONGOING">Ongoing</option>
@@ -783,20 +853,32 @@ const AdminOrganizedEvents: React.FC = () => {
                           <option value="SOLD_OUT">Sold Out</option>
                         </select>
 
-                        <button
-                          onClick={() => openEditModal(event)}
-                          className="p-2 rounded-xl text-slate-600 hover:text-sky-600 hover:bg-sky-50 transition-colors"
-                          title="Edit Event"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(event)}
-                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="Delete Event"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(event);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                            title="Edit Event Details"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(event);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+                            title="Delete this event permanently"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
