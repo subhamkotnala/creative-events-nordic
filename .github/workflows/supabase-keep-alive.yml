@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Ping Supabase Database
         run: |
-          curl -s -f -X GET "https://qngqankrmwlxxzdluqhe.supabase.co/rest/v1/organized_events?select=id&limit=1" \
+          curl -s -f -X GET "https://mghhxztxumkxqaiwvdgj.supabase.co/rest/v1/organized_events?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
           echo "Supabase database pinged successfully! Inactivity timer reset."
